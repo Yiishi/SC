@@ -1,7 +1,7 @@
 public class User {
 
-    private String username = null;
-    private int wallet = null;
+    private String username;
+    private int wallet = 0;
 
     public User(String name){
         username = name;
@@ -12,7 +12,7 @@ public class User {
         return username;
     }
 
-    public String getWallet(){
+    public int getWallet(){
         return wallet;
     }
 }
