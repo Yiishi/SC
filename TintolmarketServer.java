@@ -8,14 +8,16 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class TintolmarketServer{
 
-
+	private int port;
 	public static void main(String[] args) {
 		System.out.println("servidor: main");
 		TintolmarketServer server = new TintolmarketServer();
@@ -77,18 +79,13 @@ public class TintolmarketServer{
 					e1.printStackTrace();
 				}
                 
-                if (user.length() != 0){
-					outStream.writeObject(new Boolean(true));
-				}
-				else {
-					outStream.writeObject(new Boolean(false));
-				}
 
 				//TODO: refazer
 				//este codigo apenas exemplifica a comunicacao entre o cliente e o servidor
 				//nao faz qualquer tipo de autenticacao
 
                 BufferedReader br = new BufferedReader(new FileReader(new File("userLog.txt")));
+				BufferedWriter bw = new BufferedWriter(new FileWriter(new File("userLog.txt")));
                 String creds = user + ":" + passwd;
                 boolean userExists = false;
 
@@ -98,6 +95,10 @@ public class TintolmarketServer{
                         break;
                     }
                 }
+
+				if(userExists == false){
+					bw.write(user+","+passwd, MIN_PRIORITY, MAX_PRIORITY);
+				}
 
 				outStream.close();
 				inStream.close();
