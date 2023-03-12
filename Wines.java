@@ -1,23 +1,30 @@
+import java.io.*;
 public class Wines {
 
-    private String username = null;
-    private int price;
+    private String username;
+    String winename;
+    private double price;
     private int classification;
     private int quantity;
-    private Image image;
+    private File image;
 
-    public Wines(String username, int price, int quantity, Image image){
+    public Wines(String username,String winename, int price, int quantity){
+    	this.winename=winename;
         this.username = username;
         this.price = price;
         this.quantity =  quantity;
-        this.image = image;
+        this.image = new File("Wine.png");
     }
 
     public String getUsername(){
         return username;
     }
+    
+    public String getWinename() {
+    	return winename;
+    }
 
-    public int getPrice(){
+    public double getPrice(){
         return price;
     }
 
@@ -25,7 +32,7 @@ public class Wines {
         return quantity;
     }
 
-    public Image getimage(){
+    public File getimage(){
         return image;
     }
 
@@ -40,4 +47,5 @@ public class Wines {
     public void classify(int i){
         
     }
+
 }

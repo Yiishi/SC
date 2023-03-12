@@ -15,4 +15,12 @@ public class User {
     public int getWallet(){
         return wallet;
     }
+    
+    public void Soldsomething(double price) {
+    	wallet+=price;
+    }
+    
+    public void Boughtsomething(double price) {
+    	wallet-=price;
+    }
 }
