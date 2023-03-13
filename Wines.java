@@ -1,12 +1,12 @@
 public class Wines {
 
     private String username = null;
-    private int price = null;
-    private int classification = null;
+    private double price = null;
+    private LinkedList classification = new LinkedList();
     private int quantity = null;
-    private image;
+    private Image image;
 
-    public User(String username, int price, int quantity, image){
+    public Wines(String username, int price, int quantity, Image image){
         this.username = username;
         this.price = price;
         this.quantity =  quantity;
@@ -17,27 +17,36 @@ public class Wines {
         return username;
     }
 
-    public String getPrice(){
+    public int getPrice(){
         return price;
     }
 
-    public String getQuantity(){
+    public int getQuantity(){
         return quantity;
     }
 
-    public String getimage(){
+    public Image getimage(){
         return image;
     }
 
     public void sell(int i){
-        return quantity - i;
+       quantity-=i ;
     }
 
     public void add(int i){
-        return quantity + i;
+        quantity + i;
+    }
+
+    public void addClassification(int i){
+        classification.addLast(i);
     }
 
     public void classify(int i){
-        
+        double count = classification.size();
+        double classif = 0;
+        for(int i = 0 i < count, i++){
+            classif += classification.get(i);
+        }
+        return classif/count
     }
 }
