@@ -47,6 +47,6 @@ public class Wines {
         for(int i = 0 i < count, i++){
             classif += classification.get(i);
         }
-        return classif/count
+        return classif/count;
     }
 }
