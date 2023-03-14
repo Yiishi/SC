@@ -110,4 +110,71 @@ public class TintolmarketServer{
 			}
 		}
 	}
+
+	public request avaluateRequest(String str){
+
+		//Avaliar o conteudo enviado do cliente para o servidor
+
+		return null;
+	}
+
+	/**
+	 * @param request
+	 */
+	public void processRquest(request request){
+		switch(request){
+			case ADD:
+				addWine();
+				break;
+
+			case BUY:
+				buyWine();
+				break;
+				
+			case CLASSIFY:
+				classifyWine();
+				break;
+
+			case READ:
+				readMessege();
+				break;
+
+			case SELL:
+				sellWine();
+				break;
+
+			case TALK:
+				sendMessage();
+				break;
+
+			case VIEW:
+				viewWine();
+				break;
+				
+			default:
+				break;
+
+		}
+	}
+
+	private void viewWine() {
+	}
+
+	private void sendMessage() {
+	}
+
+	private void sellWine() {
+	}
+
+	private void readMessege() {
+	}
+
+	private void classifyWine() {
+	}
+
+	private void buyWine() {
+	}
+
+	private void addWine() {
+	}
 }
