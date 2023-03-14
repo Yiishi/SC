@@ -16,7 +16,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class TintolmarketServer{
-
+	BufferedReader br;
+	File wines = new File("wines.txt");
+	File users = new File ("userLog.txt");
+	File winesforsale = new File("winesforsale.txt");
 	private int port;
 	public static void main(String[] args) {
 		System.out.println("servidor: main");
@@ -140,7 +143,7 @@ public class TintolmarketServer{
 				break;
 
 			case SELL:
-				sellWine();
+				sellWine(wine, quantity);
 				break;
 
 			case TALK:
@@ -163,7 +166,21 @@ public class TintolmarketServer{
 	private void sendMessage() {
 	}
 
-	private void sellWine() {
+	private String sellWine(Wines wine, double value, int quantity )throws Exception{
+        String name= wine.getWinename();
+        br = new BufferedReader(new FileReader(wines));
+        String st;
+        while((st = br.readLine())!=null) {
+        	if(name.equals(st)) {
+        		FileWriter fw= new FileWriter (winesforsale, true);
+        	    BufferedWriter bw= new BufferedWriter(fw);
+        		bw.write("Vinho: "+name+" ; vendedor : "+wine.getUsername()+ " ; quantidade : " + quantity + "; valor : "+value);
+        	    bw.newLine();
+        	    bw.close();
+        	    return ("Vinho posto à venda, poderá ver a lista em "+winesforsale.getPath());
+       		}
+       }
+       throw new Exception("vinho não existe");
 	}
 
 	private void readMessege() {

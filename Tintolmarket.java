@@ -1,10 +1,25 @@
 import java.io.*;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class Tintolmarket {
 	BufferedReader br;
 	File wines = new File("wines.txt");
 	File users = new File ("userLog.txt");
 	File winesforsale = new File("winesforsale.txt");
+    private String hostName;
+    private int portNumber;
+    private Socket clientSocket;
+    private DataOutputStream outToServer;
+    private BufferedReader inFromServer;
+
+    public Tintolmarket(int port, String userId, String passWord) throws UnknownHostException, IOException {
+        this.portNumber = port;
+        this.clientSocket = new Socket(hostName, portNumber);
+        this.outToServer = new DataOutputStream(clientSocket.getOutputStream());
+        this.inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+    }
+
     public int wallet(User user){
         return user.getWallet();
     }
