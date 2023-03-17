@@ -14,16 +14,45 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class TintolmarketServer{
 	BufferedReader br;
+	BufferedReader br2;
 	File wines = new File("wines.txt");
 	File users = new File ("userLog.txt");
 	File winesforsale = new File("winesforsale.txt");
 	private int port;
-	public static void main(String[] args) {
+	private ArrayList<User> userList;
+	private ArrayList<Wines> winesList;
+
+	public TintolmarketServer(int port) throws Exception{
+		this.port = port;
+		userList = new ArrayList<User>();
+		winesList = new ArrayList<Wines>();
+
+		br = new BufferedReader(new FileReader("users.txt"));
+		String st;
+		String split[] = new String[3];;
+        while((st = br.readLine())!=null) {
+			split = st.split(" ");
+			userList.add(new User(split[0],Integer.parseInt(split[1])));
+		}
+
+		br = new BufferedReader(new FileReader("wines.txt"));
+		String st2;
+		String split2[] = new String[5];;
+        while((st2 = br.readLine())!=null) {
+			split2 = st2.split(" ");
+			winesList.add(new Wines(split2[0], split2[1], Integer.parseInt(split[2]), Integer.parseInt(split[3])));
+		}
+
+	}
+
+	public static void main(String[] args) throws Exception{
 		System.out.println("servidor: main");
-		TintolmarketServer server = new TintolmarketServer();
+		TintolmarketServer server = new TintolmarketServer(Integer.parseInt(args[1]));//Lidar exeção para caso o porto nao ser um Int!!!!
 		server.startServer(args);
 	}
 

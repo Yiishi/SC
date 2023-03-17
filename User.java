@@ -3,9 +3,9 @@ public class User {
     private String username;
     private int wallet = 0;
 
-    public User(String name){
+    public User(String name, int wallet){
         username = name;
-        wallet = 200;
+        this.wallet = wallet;
     }
 
     public String getUsername(){
