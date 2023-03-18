@@ -23,6 +23,7 @@ public class TintolmarketServer{
 	File wines = new File("wines.txt");
 	File users = new File ("userLog.txt");
 	File winesforsale = new File("winesforsale.txt");
+	User currentUser;
 	private int port;
 	private ArrayList<User> userList;
 	private ArrayList<Wines> winesList;
@@ -130,6 +131,13 @@ public class TintolmarketServer{
 
 				if(userExists == false){
 					bw.write(user+","+passwd, MIN_PRIORITY, MAX_PRIORITY);
+				} else{
+					for(User u : userList) {
+						if(u.getWinename().equals(user)){
+							currentUser = u;
+							break;
+						}
+					}
 				}
 
 				outStream.close();
@@ -224,7 +232,13 @@ public class TintolmarketServer{
        throw new Exception("vinho não existe");
 	}
 
-	private void talk() {
+	private void talk(String user, String message, ) {
+		if((new File("chat.txt")).exists()){
+			FileWriter fw= new FileWriter (chat, true);
+        	BufferedWriter bw= new BufferedWriter(fw);
+			bw.write(user + "/" + message + "/" + currentUser.getUsername());
+		}
+
 	}
 
 	private void viewWine() {
