@@ -215,7 +215,7 @@ public class TintolmarketServer{
 		}
 	}
 
-	private void readMessege(User currentUser) {
+	private void readMessege() {
 	}
 
 	private String sellWine(Wines wine, double value, int quantity )throws Exception{
@@ -235,8 +235,13 @@ public class TintolmarketServer{
        throw new Exception("vinho não existe");
 	}
 
-	private void talk(String user, String message) {
+	private void talk(String user, String message, ) {
 		if((new File("chat.txt")).exists()){
+			FileWriter fw= new FileWriter (chat, true);
+        	BufferedWriter bw= new BufferedWriter(fw);
+			bw.write(user + "/" + message + "/" + currentUser.getUsername());
+		}else{
+			File file = new File("chat.txt");
 			FileWriter fw= new FileWriter (chat, true);
         	BufferedWriter bw= new BufferedWriter(fw);
 			bw.write(user + "/" + message + "/" + currentUser.getUsername());
