@@ -29,10 +29,85 @@ public class Tintolmarket {
             outToServer = new ObjectOutputStream(clientSocket.getOutputStream());
             inFromServer = new ObjectInputStream(clientSocket.getInputStream());
         }
-        
+
+        Scanner ler = new Scanner(System.in);
+
+        while(true){
+            System.out.println("Menu");
+            System.out.println("Adicionar um vinho ao catalogo : add wineName image");
+            System.out.println("Colocar um vinho do catalogo a venda: sell wineName value quantity");
+            System.out.println("Ver um vinho: view wineName");
+            System.out.println("Comprar vinho: buy wineName seller quantity");
+            System.out.println("Verificar carteira: wallet");
+            System.out.println("Classificar vinho: classify wineName stars");
+            System.out.println("Enviar mensagem: talk user message");
+            System.out.println("Ler mensagens: read");
+
+            String acao = ler.nextLine();
+            avaliaAcao(acao);
+        }
+
     }
 
-    public int wallet(User user){
+    public void avaliaAcao(String acao){
+        String[] split = acao.split(" ");
+		
+		if(split[0].equals("add")){
+            if(slip.length() == 3){
+                add(split[1],split[2]);
+            }else{
+                System.out.println("Por favor preencha todos os requisirtos corretamente");
+            }
+		}else if(split[0].equals("sell")){
+            if(slip.length() == 4){
+                sell(split[1],split[2],split[3]);
+            }else{
+                System.out.println("Por favor preencha todos os requisirtos corretamente");
+            }
+
+		}else if(split[0].equals("view")){
+			if(slip.length() == 2){
+                view(split[1]);
+            }else{
+                System.out.println("Por favor preencha todos os requisirtos corretamente");
+            }
+
+		}else if(split[0].equals("buy")){
+            if(slip.length() == 4){
+                buy(split[1],split[2],split[3]);
+            }else{
+                System.out.println("Por favor preencha todos os requisirtos corretamente");
+            }
+            
+        }else if(split[0].equals("wallet")){
+            if(slip.length() == 1){
+                wallet();
+            }else{
+                System.out.println("Por favor preencha todos os requisirtos corretamente");
+            }
+			
+		}else if(split[0].equals("classify")){
+			if(slip.length() == 3){
+                classify(split[1],split[2]);
+            }else{
+                System.out.println("Por favor preencha todos os requisirtos corretamente");
+            }
+
+		}else if(split[0].equals("talk")){
+            
+			
+		}else if(split[0].equals("read")){
+            if(slip.length() == 1){
+                read();
+            }else{
+                System.out.println("Por favor preencha todos os requisirtos corretamente");
+            }
+			
+		}
+
+    }
+
+    public int wallet(){
         return user.getWallet();
     }
 
@@ -53,7 +128,7 @@ public class Tintolmarket {
 
     
     
-    public void add(Wines wine, File image, int quantity)throws Exception{
+    public void add(Wines wine, File image)throws Exception{
      String name= wine.getWinename();
      br = new BufferedReader(new FileReader(wines));
      String st;
