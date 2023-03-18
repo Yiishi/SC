@@ -104,18 +104,20 @@ public class TintolmarketServer{
 				String passwd = null;
 			
 				try {
+					
 					user = (String)inStream.readObject();
 					passwd = (String)inStream.readObject();
 					System.out.println("thread: depois de receber a password e o user");
 				}catch (ClassNotFoundException e1) {
 					e1.printStackTrace();
 				}
-                
-
-				//TODO: refazer
-				//este codigo apenas exemplifica a comunicacao entre o cliente e o servidor
-				//nao faz qualquer tipo de autenticacao
-
+				
+				
+				/*
+				*TODO: analizar userIs e password
+				*enviar user outStream.writeObject(user);
+				*analizar inputs do client
+				**/
                 BufferedReader br = new BufferedReader(new FileReader(new File("userLog.txt")));
 				BufferedWriter bw = new BufferedWriter(new FileWriter(new File("userLog.txt")));
                 String creds = user + ":" + passwd;
