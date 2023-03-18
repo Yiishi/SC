@@ -118,36 +118,53 @@ public class TintolmarketServer{
 				*enviar user outStream.writeObject(user);
 				*analizar inputs do client
 				**/
-				User currentUser;
+				User currentUser = null;
                 BufferedReader br = new BufferedReader(new FileReader(new File("userLog.txt")));
 				BufferedWriter bw = new BufferedWriter(new FileWriter(new File("userLog.txt")));
-                String creds = user + ":" + passwd;
+                boolean correctPass = false;
                 boolean userExists = false;
+				boolean closed = false;
 
                 for (String x = br.readLine(); x != null; x = br.readLine()){
-                    if(x.equals(creds)){
+					String[] s = x.split(":");
+                    if(s[0].equals(user) && s[1].equals(passwd)){
                         userExists = true;
+						correctPass = true;
                         break;
                     }
                 }
 
 				if(userExists == false){
+
 					bw.write(user+","+passwd, MIN_PRIORITY, MAX_PRIORITY);
-				} else{
+					currentUser = new User(user, 200);
+					outStream.writeBytes("user criado");
+
+				} else if(userExists == true && correctPass == true){
+
 					for(User u : userList) {
-						if(u.getWinename().equals(user)){
+						if(u.getUsername().equals(user)){
 							currentUser = u;
 							break;
 						}
 					}
+					outStream.writeBytes("autenticado");
+
+				}else{
+					outStream.writeBytes("password incorreta");;
+					closed = true;
 				}
 
+				if(!closed){
+					outStream.writeObject(currentUser);
+					processRquest(avaluateRequest((String) inStream.readObject()));
+				}
 				outStream.close();
 				inStream.close();
  			
 				socket.close();
 
-			} catch (IOException e) {
+			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
 		}
@@ -155,8 +172,23 @@ public class TintolmarketServer{
 
 	public request avaluateRequest(String str){
 
-		//Avaliar o conteudo enviado do cliente para o servidor
+		String[] split = str.split(" ", 2);
+		
+		if(split[0].equals("add")){
 
+		}else if(split[0].equals("sell")){
+
+		}else if(split[0].equals("view")){
+			
+		}else if(split[0].equals("buy")){
+			
+		}else if(split[0].equals("classify")){
+			
+		}else if(split[0].equals("talk")){
+			
+		}else if(split[0].equals("read")){
+			
+		}
 		return null;
 	}
 
