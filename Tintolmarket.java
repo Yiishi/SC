@@ -8,17 +8,28 @@ public class Tintolmarket {
 	File users = new File ("userLog.txt");
 	File winesforsale = new File("winesforsale.txt");
     User user;
-    private String hostName;
-    private int portNumber;
-    private Socket clientSocket;
-    private DataOutputStream outToServer;
-    private BufferedReader inFromServer;
+    private static String hostName;
+    private static int portNumber;
+    private static Socket clientSocket;
+    private static ObjectOutputStream outToServer;
+    private static ObjectInputStream inFromServer;
+    
+    public static void main(String[] args) throws Exception{
 
-    public Tintolmarket(int port, String userId, String passWord) throws UnknownHostException, IOException {
-        this.portNumber = port;
-        this.clientSocket = new Socket(hostName, portNumber);
-        this.outToServer = new DataOutputStream(clientSocket.getOutputStream());
-        this.inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        if(args.length == 4){
+
+            String[] st = args[1].split(":");
+            
+            if(st.length == 2){
+                portNumber = Integer.parseInt(st[1]);  
+            }else{
+                portNumber = 12345;
+            }
+            clientSocket = new Socket(st[0]/*hostname*/, portNumber);
+            outToServer = new ObjectOutputStream(clientSocket.getOutputStream());
+            inFromServer = new ObjectInputStream(clientSocket.getInputStream());
+        }
+        
     }
 
     public int wallet(User user){
