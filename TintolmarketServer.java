@@ -23,7 +23,6 @@ public class TintolmarketServer{
 	File wines = new File("wines.txt");
 	File users = new File ("userLog.txt");
 	File winesforsale = new File("winesforsale.txt");
-	User currentUser;
 	private int port;
 	private ArrayList<User> userList;
 	private ArrayList<Wines> winesList;
@@ -119,6 +118,7 @@ public class TintolmarketServer{
 				*enviar user outStream.writeObject(user);
 				*analizar inputs do client
 				**/
+				User currentUser;
                 BufferedReader br = new BufferedReader(new FileReader(new File("userLog.txt")));
 				BufferedWriter bw = new BufferedWriter(new FileWriter(new File("userLog.txt")));
                 String creds = user + ":" + passwd;
@@ -164,33 +164,34 @@ public class TintolmarketServer{
 	 * @param request
 	 */
 	public void processRquest(request request){
+		User currentUser;
 		switch(request){
 			case ADD:
-				addWine();
+				addWine(currentUser);
 				break;
 
 			case BUY:
-				buyWine();
+				buyWine(currentUser);
 				break;
 				
 			case CLASSIFY:
-				classifyWine(wine, stars);
+				classifyWine(wine, stars, currentUser);
 				break;
 
 			case READ:
-				readMessege();
+				readMessege(currentUser);
 				break;
 
 			case SELL:
-				sellWine(wine, quantity);
+				sellWine(wine, quantity, currentUser);
 				break;
 
 			case TALK:
-				talk();
+				talk(currentUser);
 				break;
 
 			case VIEW:
-				viewWine();
+				viewWine(currentUser);
 				break;
 				
 			default:
@@ -199,10 +200,10 @@ public class TintolmarketServer{
 		}
 	}
 
-	private void addWine() {
+	private void addWine(User currentUser) {
 	}
 	
-	private void buyWine() {
+	private void buyWine(User currentUser) {
 	}
 
 	private void classifyWine(String wine, int stars) {
@@ -214,7 +215,7 @@ public class TintolmarketServer{
 		}
 	}
 
-	private void readMessege() {
+	private void readMessege(User currentUser) {
 	}
 
 	private String sellWine(Wines wine, double value, int quantity )throws Exception{
@@ -234,7 +235,7 @@ public class TintolmarketServer{
        throw new Exception("vinho não existe");
 	}
 
-	private void talk(String user, String message, ) {
+	private void talk(String user, String message) {
 		if((new File("chat.txt")).exists()){
 			FileWriter fw= new FileWriter (chat, true);
         	BufferedWriter bw= new BufferedWriter(fw);
@@ -243,7 +244,7 @@ public class TintolmarketServer{
 
 	}
 
-	private void viewWine() {
+	private void viewWine(User currentUser) {
 	}
 
 }
