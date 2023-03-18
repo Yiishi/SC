@@ -164,7 +164,7 @@ public class TintolmarketServer{
 				break;
 				
 			case CLASSIFY:
-				classifyWine();
+				classifyWine(wine, stars);
 				break;
 
 			case READ:
@@ -176,7 +176,7 @@ public class TintolmarketServer{
 				break;
 
 			case TALK:
-				sendMessage();
+				talk();
 				break;
 
 			case VIEW:
@@ -189,10 +189,22 @@ public class TintolmarketServer{
 		}
 	}
 
-	private void viewWine() {
+	private void addWine() {
+	}
+	
+	private void buyWine() {
 	}
 
-	private void sendMessage() {
+	private void classifyWine(String wine, int stars) {
+		for(Wines w : winesList) {
+			if(w.getWinename().equals(wine)){
+				w.classify(stars);
+				break;
+			}
+		}
+	}
+
+	private void readMessege() {
 	}
 
 	private String sellWine(Wines wine, double value, int quantity )throws Exception{
@@ -212,15 +224,10 @@ public class TintolmarketServer{
        throw new Exception("vinho não existe");
 	}
 
-	private void readMessege() {
+	private void talk() {
 	}
 
-	private void classifyWine() {
+	private void viewWine() {
 	}
 
-	private void buyWine() {
-	}
-
-	private void addWine() {
-	}
 }

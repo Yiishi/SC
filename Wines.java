@@ -4,7 +4,7 @@ public class Wines {
     private String username;
     String winename;
     private double price;
-    private int classification;
+    private ArrayList<int> classification;
     private int quantity;
     private File image;
 
@@ -32,6 +32,16 @@ public class Wines {
         return quantity;
     }
 
+    public int getClassify(){
+        int count = 0;
+        int sum = 0;
+        for(int i : classification){
+            sum += i;
+            count++;
+        }
+        return sum/count ;
+    }
+
     public File getimage(){
         return image;
     }
@@ -45,7 +55,7 @@ public class Wines {
     }
 
     public void classify(int i){
-        
+        classification.add(i);
     }
 
 }

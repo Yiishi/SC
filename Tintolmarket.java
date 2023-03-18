@@ -7,6 +7,7 @@ public class Tintolmarket {
 	File wines = new File("wines.txt");
 	File users = new File ("userLog.txt");
 	File winesforsale = new File("winesforsale.txt");
+    User user;
     private String hostName;
     private int portNumber;
     private Socket clientSocket;
@@ -24,7 +25,7 @@ public class Tintolmarket {
         return user.getWallet();
     }
 
-    public void classify( Wines wine, int stars){
+    public void classify(String wine, int stars){
         
     }
 
