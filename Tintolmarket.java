@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 public class Tintolmarket {
 	BufferedReader br;
@@ -53,41 +54,41 @@ public class Tintolmarket {
         String[] split = acao.split(" ");
 		
 		if(split[0].equals("add")){
-            if(slip.length() == 3){
+            if(split.length == 3){
                 add(split[1],split[2]);
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
 		}else if(split[0].equals("sell")){
-            if(slip.length() == 4){
+            if(split.length == 4){
                 sell(split[1],split[2],split[3]);
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
 
 		}else if(split[0].equals("view")){
-			if(slip.length() == 2){
+			if(split.length == 2){
                 view(split[1]);
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
 
 		}else if(split[0].equals("buy")){
-            if(slip.length() == 4){
+            if(split.length == 4){
                 buy(split[1],split[2],split[3]);
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
             
         }else if(split[0].equals("wallet")){
-            if(slip.length() == 1){
+            if(split.length == 1){
                 wallet();
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
 			
 		}else if(split[0].equals("classify")){
-			if(slip.length() == 3){
+			if(split.length == 3){
                 classify(split[1],split[2]);
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
@@ -97,7 +98,7 @@ public class Tintolmarket {
             
 			
 		}else if(split[0].equals("read")){
-            if(slip.length() == 1){
+            if(split.length == 1){
                 read();
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
