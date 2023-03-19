@@ -157,7 +157,7 @@ public class TintolmarketServer{
 
 				if(!closed){
 					outStream.writeObject(currentUser);
-					processRquest(avaluateRequest((String) inStream.readObject()));
+					avaluateRequest((String) inStream.readObject(), currentUser);
 				}
 				outStream.close();
 				inStream.close();
@@ -170,32 +170,45 @@ public class TintolmarketServer{
 		}
 	}
 
-	public request avaluateRequest(String str){
+	public void avaluateRequest(String str, User currentUser){
 
 		String[] split = str.split(" ", 2);
 		String[] split2 = str.split(" ");
 
 		if(split[0].equals("add")){
-			
+
+			addWine(currentUser);
+
 		}else if(split[0].equals("sell")){
 
+			sellWine(wine, quantity, currentUser);
+
 		}else if(split[0].equals("view")){
-			
+
+			viewWine(currentUser);
+
 		}else if(split[0].equals("buy")){
-			
+
+			buyWine(currentUser);
+
 		}else if(split[0].equals("classify")){
 			
+			classifyWine(wine, stars, currentUser);
+
 		}else if(split[0].equals("talk")){
-			
+
+			talk(currentUser);
+
 		}else if(split[0].equals("read")){
 			
+			readMessege(currentUser);
 		}
-		return null;
+		
 	}
 
 	/**
 	 * @param request
-	 */
+	 *
 	public void processRquest(request request){
 		User currentUser;
 		switch(request){
@@ -231,7 +244,7 @@ public class TintolmarketServer{
 				break;
 
 		}
-	}
+	}**/
 
 	private void addWine(User currentUser) {
 	}
