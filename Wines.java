@@ -1,10 +1,11 @@
 import java.io.*;
+import java.util.ArrayList;
 public class Wines {
 
     private String username;
     String winename;
     private double price;
-    private ArrayList<int> classification;
+    private ArrayList<Integer> classification;
     private int quantity;
     private File image;
 
