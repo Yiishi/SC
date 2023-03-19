@@ -173,9 +173,10 @@ public class TintolmarketServer{
 	public request avaluateRequest(String str){
 
 		String[] split = str.split(" ", 2);
-		
-		if(split[0].equals("add")){
+		String[] split2 = str.split(" ");
 
+		if(split[0].equals("add")){
+			
 		}else if(split[0].equals("sell")){
 
 		}else if(split[0].equals("view")){
