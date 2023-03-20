@@ -115,13 +115,13 @@ public class Tintolmarket {
         return user.getWallet();
     }
 
-    public void classify( Wines wine, int stars){
-        outToServer.writeBytes("classify wine stars");
+    public void classify( String wine, int stars){
+        outToServer.writeBytes("classify " + wine + " " + stars);
     }
 
     
     public void talk (String user, String message){
-        outToServer.writeBytes("talk user message");
+        outToServer.writeBytes("talk " + user + " " + message);
     }
     
     
@@ -132,9 +132,9 @@ public class Tintolmarket {
 
     
     
-    public void add(Wines wine, File image, int quantity)throws Exception{
+    public void add(String wine, File image, int quantity)throws Exception{
 
-        outToServer.writeBytes("add wine image quantity");
+        outToServer.writeBytes("add " + wine + " " + image + " " + quantity);
 
      String name= wine.getWinename();
      br = new BufferedReader(new FileReader(wines));
@@ -155,9 +155,9 @@ public class Tintolmarket {
     
     
     
-    public String sell(Wines wine, double value, int quantity )throws Exception{
+    public String sell(String wine, double value, int quantity )throws Exception{
         
-        outToServer.writeBytes("sell wine value quantity");
+        outToServer.writeBytes("sell " + wine + " " + value + " " + quantity);
         
         String name= wine.getWinename();
         br = new BufferedReader(new FileReader(wines));
@@ -176,9 +176,9 @@ public class Tintolmarket {
     }
     
     
-    public void buy(User buyer, Wines wine, User seller, int quantity )throws Exception {
+    public void buy(String wine, String seller, int quantity )throws Exception {
 
-        outToServer.writeBytes("buy buyer wine seller quantity");
+        outToServer.writeBytes("buy " + wine + " " + seller + " " + quantity);
 
     	if(!(wine.getUsername()==seller.getUsername())) {
     		throw new Exception ("vendedor não vende este vinho");
@@ -195,9 +195,9 @@ public class Tintolmarket {
     	//txt wines for sale update quantity
     }
     
-    public String view (Wines wine) {
+    public String view (String wine) {
     	
-        outToServer.writeBytes("view wine");
+        outToServer.writeBytes("view " + wine);
     	
     	return "";
     }
