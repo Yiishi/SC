@@ -131,12 +131,6 @@ public class TintolmarketServer{
 					e1.printStackTrace();
 				}
 				
-				
-				/*
-				*TODO: analizar userIs e password
-				*enviar user outStream.writeObject(user);
-				*analizar inputs do client
-				**/
 				User currentUser = null;
                 BufferedReader br = new BufferedReader(new FileReader(new File("userLog.txt")));
 				BufferedWriter bw = new BufferedWriter(new FileWriter(new File("userLog.txt")));
@@ -228,46 +222,6 @@ public class TintolmarketServer{
 		}
 		
 	}
-
-	/**
-	 * @param request
-	 *
-	public void processRquest(request request){
-		User currentUser;
-		switch(request){
-			case ADD:
-				addWine(currentUser);
-				break;
-
-			case BUY:
-				buyWine(currentUser);
-				break;
-				
-			case CLASSIFY:
-				classifyWine(wine, stars, currentUser);
-				break;
-
-			case READ:
-				readMessege(currentUser);
-				break;
-
-			case SELL:
-				sellWine(wine, quantity, currentUser);
-				break;
-
-			case TALK:
-				talk(currentUser);
-				break;
-
-			case VIEW:
-				viewWine(currentUser);
-				break;
-				
-			default:
-				break;
-
-		}
-	}**/
 
 	private void addWine(String wine, int quantity,User currentUser, double value)throws Exception {
 		Wines newWine=new Wines(currentUser.getUsername(), wine,value, quantity);
