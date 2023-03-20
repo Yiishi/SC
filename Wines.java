@@ -10,7 +10,7 @@ public class Wines {
     private File image;
 
     public Wines(String username,String winename, int price, int quantity){
-    	this.winename=winename;
+    	this.winename = winename;
         this.username = username;
         this.price = price;
         this.quantity =  quantity;
@@ -48,7 +48,6 @@ public class Wines {
     }
 
     public void sell(int i){
-       quantity-=i ;
        quantity-=i ;
     }
 
