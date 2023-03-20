@@ -73,6 +73,8 @@ public class Tintolmarket {
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
+            String s = (String) inStream.readObject();
+            System.out.println("");
 
 		}else if(split[0].equals("buy")){
             if(split.length == 4){
