@@ -9,7 +9,7 @@ public class Wines {
     private int quantity;
     private File image;
 
-    public Wines(String username,String winename, double price, int quantity){
+    public Wines(String winename ,String username , double price , int quantity , File image ){
     	this.winename = winename;
         this.username = username;
         this.price = price;
@@ -58,7 +58,7 @@ public class Wines {
         classification.add(i);
     }
     public void correspondImage(File image) {
-    	this.image=image;
+    	this.image = image;
     }
 
 

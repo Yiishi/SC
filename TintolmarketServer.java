@@ -31,10 +31,11 @@ public class TintolmarketServer{
 		this.port = port;
 		userList = new ArrayList<User>();
 		winesList = new ArrayList<Wines>();
+		winesForSaleList = new ArrayList<Wines>();
 
 		br = new BufferedReader(new FileReader("users.txt"));
 		String st;
-		String split[] = new String[3];;
+		String split[] = new String[3];
         while((st = br.readLine())!=null) {
 			split = st.split(" ");
 			userList.add(new User(split[0],Integer.parseInt(split[1])));
@@ -42,10 +43,18 @@ public class TintolmarketServer{
 
 		br = new BufferedReader(new FileReader("wines.txt"));
 		String st2;
-		String split2[] = new String[5];;
+		String split2[] = new String[5];
         while((st2 = br.readLine())!=null) {
 			split2 = st2.split(" ");
-			winesList.add(new Wines(split2[0], split2[1], Integer.parseInt(split[2]), Integer.parseInt(split[3])));
+			winesList.add(new Wines(split2[0], split2[1], Integer.parseInt(split[2]), Integer.parseInt(split[3]), null));
+		}
+
+		br = new BufferedReader(new FileReader("winesForSale.txt"));
+		String st3;
+		String split3[] = new String[2];
+        while((st3 = br.readLine())!=null) {
+			split3 = st3.split(" ");
+			winesForSaleList.add(new Wines(split2[0], null, null, null,split2[1]));
 		}
 
 	}
@@ -84,25 +93,32 @@ public class TintolmarketServer{
 		//sSoc.close();
 	}
 	
-	public Wines getWine(String WineID)throws Exception{
-		for( Wines i : winesList) {
-			if(i.getUsername()==WineID) {
-				return i;
-			}
-		}
-		
-		throw new Exception ("Vinho não existe");
-	}
-	public User getUser(String UserID)throws Exception{
+	public User getUser(String userID)throws Exception{
 		for( User i : userList) {
-			if(i.getUsername()==UserID) {
+			if(i.getUsername() == UserID) {
 				return i;
 			}
 		}
-		
-		throw new Exception ("User não existe");
+		return null;
+	}
+	
+	public Wines getWine(String wineID)throws Exception{
+		for( Wines i : winesList) {
+			if(i.getWinename() == WineID) {
+				return i;
+			}
+		}
+		return null;
 	}
 
+	public Wines getWineForSale(String wineID)throws Exception{
+		for( Wines i : winesForSaleList) {
+			if(i.getWinename() == WineID) {
+				return i;
+			}
+		}
+		return null;
+	}
 
 	//Threads utilizadas para comunicacao com os clientes
 	class ServerThread extends Thread {
@@ -266,70 +282,96 @@ public class TintolmarketServer{
 		}
 	}**/
 
-	private void addWine(String wine, int quantity,User currentUser, double value)throws Exception {
-		Wines newWine=new Wines(currentUser.getUsername(), wine,value, quantity);
-		winesList.add(newWine);
-		FileWriter fw= new FileWriter (wines, true);
-	    BufferedWriter bw= new BufferedWriter(fw);
-		bw.write("Vinho: "+wine+" ; proprietário : "+currentUser.getUsername()+ " ; quantidade : " + quantity + "; valor : "+value);
-	    bw.newLine();
-	    bw.close();
+	private void addWine(String wine, File image)throws Exception {
+		if(getWine(wine) == null){
+			Wines newWine = new Wines(wine, null, null, null, image);
+			winesList.add(newWine);
+//			FileWriter fw= new FileWriter (wines, true);
+//			BufferedWriter bw= new BufferedWriter(fw);
+//			bw.write( wine + image);
+//			bw.newLine();
+//			bw.close();
+			outStream.writeObject("O vinho foi adicionado ao catalogo");
+		}else{
+			outStream.writeObject("O vinho que deseja adicionar ja se encontra no catalogo");
+		}
 	}
 	
-	private String buyWine(String wineID,String sellerID,int quantity,User currentUser)throws Exception {
-		Wines wine=getWine(wineID);
-		 if(!(wineID==sellerID)) {
-	            throw new Exception ("vendedor não vende este vinho");
-	        }
-	        if (quantity>wine.getQuantity()) {
-	            throw new Exception ("Quantidade demasiado elevada para o Stock existente");
-	        }
-	        if(wine.getPrice()>currentUser.getWallet()) {
-	            throw new Exception ("Não tem dinheiro suficiente");
-	        }
-	        wine.sell(quantity);
-	        User seller = getUser(sellerID);
-	        seller.Soldsomething(wine.getPrice());
-	        currentUser.Boughtsomething(wine.getPrice());
-	        br = new BufferedReader (new FileReader(winesforsale));
-	        while(br.readLine()!=null) {
-	        	String[] st = br.readLine().split(":");
-	        	if(st[0]==wineID) {
-	        		st[6].replaceAll(st[6],Integer.toString(wine.getQuantity()));
-	        		return "Compra feita, quantidade de vinhos atualizada para "+wine.getQuantity();
-	        	}
-	        }
-	        throw new Exception ("Ocorreu um erro, vinho não está registado para venda");	
+	private void buyWine(String wineID,String sellerID,int quantity,User currentUser)throws Exception {
+		Wines wine = getWineForSale(wineID);
+		if(!(wine == null)) {
+//			throw new Exception ("Ocorreu um erro, vinho não está registado para venda");
+			outStream.writeObject("Ocorreu um erro, vinho não está registado para venda");	
+
+		}else if(!(wine.username == sellerID)) {
+//	            throw new Exception ("vendedor não vende este vinho");
+				outStream.writeObject("vendedor não vende este vinho");
+
+	    }else if (quantity > wine.getQuantity()) {
+//	            throw new Exception ("Quantidade demasiado elevada para o Stock existente");
+				outStream.writeObject("Quantidade demasiado elevada para o Stock existente");
+
+	    }else if((wine.getPrice() * wine.getQuantity()) > currentUser.getWallet()) {
+//	            throw new Exception ("Não tem dinheiro suficiente");
+				outStream.writeObject("Não tem dinheiro suficiente");
+
+	    }else{
+			wine.sell(quantity);
+			User seller = getUser(sellerID);
+			seller.Soldsomething(wine.getPrice());
+			currentUser.Boughtsomething(wine.getPrice());
+//			UpdateWinesForSale(1 , String wineID, int quantity);
+			outStream.writeObject("Compra bem sucedida");
+		}
 	}
 
 	private void classifyWine(String wine, int stars, User currentUser) {
-		for(Wines w : winesList) {
-			if(w.getWinename().equals(wine)){
-				w.classify(stars);
-				break;
-			}
+		if(getWine(wine) == null){
+			outStream.writeObject("O vinho que pretende avaliar nao se encontra no catalogo");
+		}else{
+			Wines wine = getWine(wine);
+			wine.classify(stars);
+			outStream.writeObject("Obrigado pela sua avaliacao");
 		}
 	}
 	
 
 	private void readMessege(User currentUser) {
+		br = new BufferedReader(new FileReader("chat.txt"));
+		boolean noMSG = true
+		String st9;
+		String split9[] = new String[3];
+		StringBuilder msg = new StringBuilder();
+        while((st9 = br.readLine())!=null) {
+			split9 = st9.split("/");
+			if(split9[0].equals(currentUser.getUsername())){
+				msg.append(split9[1]).append("  Message from : ").append(split9[2]);
+				msg.append("/n")
+				noMSG = false
+			}
+		}
+		outStream.writeObject(msg.toString());
 	}
 
-	private String sellWine(String name, double value, int quantity, User currentuser )throws Exception{
-        Wines wine = getWine(name);
-        br = new BufferedReader(new FileReader(wines));
-        String st;
-        while((st = br.readLine())!=null) {
-        	if(name.equals(st)) {
-        		FileWriter fw= new FileWriter (winesforsale, true);
-        	    BufferedWriter bw= new BufferedWriter(fw);
-        		bw.write("Vinho: "+name+" ; vendedor : "+wine.getUsername()+ " ; quantidade : " + quantity + "; valor : "+value);
-        	    bw.newLine();
-        	    bw.close();
-        	    return ("Vinho posto à venda, poderá ver a lista em "+winesforsale.getPath());
-       		}
-       }
-       throw new Exception("vinho não existe");
+	private void sellWine(String name, double value, int quantity, User currentUser )throws Exception{
+		if(getWine(name) == null){
+			outStream.writeObject("O vinho que pretende vender nao se encontra no catalogo");
+		}
+		Wines newWine = new Wines(name, currentUser.getUsername(), value, quantity, null);
+		winesForSaleList.add(newWine);
+//       br = new BufferedReader(new FileReader(wines));
+//       String st;
+//       while((st = br.readLine())!=null) {
+//        	if(name.equals(st)) {
+//       		FileWriter fw= new FileWriter (winesforsale, true);
+//        	    BufferedWriter bw= new BufferedWriter(fw);
+//       		bw.write( name + currentUser.getUsername()+  quantity + value);
+//        	    bw.newLine();
+//       	    bw.close();
+				outStream.writeObject("Vinho colocado a venda com sucesso");
+//      	}
+//      }
+//       throw new Exception("vinho não existe");
 	}
 
 	private void talk(String user, String message, User currentUser) {
@@ -337,15 +379,25 @@ public class TintolmarketServer{
 			FileWriter fw= new FileWriter (chat, true);
         	BufferedWriter bw= new BufferedWriter(fw);
 			bw.write(user + "/" + message + "/" + currentUser.getUsername());
+			bw.newLine();
+			bw.close();
+			outStream.writeObject("Mensagem enviada");
+		}else{
+			File f = new File("chat.txt");
+			f.createNewFile();
+			FileWriter fw= new FileWriter (chat, true);
+        	BufferedWriter bw= new BufferedWriter(fw);
+			bw.write(user + "/" + message + "/" + currentUser.getUsername());
+			bw.newLine();
+			bw.close();
+			outStream.writeObject("Mensagem enviada");
 		}
 
 	}
 	
-	
-
 	private void viewWine(User currentUser,String wineID)throws Exception {
-		Wines wine= getWine(wineID);
-		File image= new File(wine+".png");
+		Wines wine = getWine(wineID);
+		File image= new File(wine + ".png");
 		wine.correspondImage(image);
 	}
 
