@@ -8,7 +8,7 @@ public class Tintolmarket {
 	File wines = new File("wines.txt");
 	File users = new File ("userLog.txt");
 	File winesforsale = new File("winesforsale.txt");
-    User user;
+    static User user;
     private static String hostName;
     private static int portNumber;
     private static Socket clientSocket;
@@ -32,7 +32,8 @@ public class Tintolmarket {
         }
 
         Scanner ler = new Scanner(System.in);
-
+        user = (User) inFromServer.readObject();
+        
         while(true){
             System.out.println("Menu");
             System.out.println("Adicionar um vinho ao catalogo : add wineName image");
