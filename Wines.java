@@ -30,7 +30,6 @@ public class Wines {
     }
 
     public int getQuantity(){
-    public int getQuantity(){
         return quantity;
     }
 
