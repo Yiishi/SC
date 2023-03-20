@@ -9,12 +9,11 @@ public class Wines {
     private int quantity;
     private File image;
 
-    public Wines(String username,String winename, int price, int quantity){
+    public Wines(String username,String winename, double price, int quantity){
     	this.winename = winename;
         this.username = username;
         this.price = price;
         this.quantity =  quantity;
-        this.image = new File("Wine.png");
     }
 
     public String getUsername(){
@@ -52,11 +51,15 @@ public class Wines {
     }
 
     public void add(int i){
-        quantity + i;
+        quantity += i;
     }
 
     public void classify(int i){
         classification.add(i);
     }
+    public void correspondImage(File image) {
+    	this.image=image;
+    }
+
 
 }
