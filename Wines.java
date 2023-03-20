@@ -56,10 +56,6 @@ public class Wines {
         quantity + i;
     }
 
-    public void addClassification(int i){
-        classification.addLast(i);
-    }
-
     public void classify(int i){
         classification.add(i);
     }
