@@ -186,6 +186,9 @@ public class TintolmarketServer{
 
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}
@@ -197,27 +200,27 @@ public class TintolmarketServer{
 
 		if(split[0].equals("add")){
 
-			addWine(split[1],Integer.parseInt(split[2]),currentUser, Double.parseDouble(split[3]));
+			addWine(split2[1],Integer.parseInt(split2[2]),currentUser, Double.parseDouble(split2[3]));
 
 		}else if(split[0].equals("sell")){
 
-			sellWine(split[1], Double.parseDouble(split[2]), Integer.parseInt(split[3]),currentUser);
+			sellWine(split2[1], Double.parseDouble(split2[2]), Integer.parseInt(split2[3]),currentUser);
 
 		}else if(split[0].equals("view")){
 
-			viewWine(currentUser,split[1]);
+			viewWine(currentUser,split2[1]);
 
 		}else if(split[0].equals("buy")){
 
-			buyWine(split[1],split[2],Integer.parseInt(split[3]), currentUser);
+			buyWine(split2[1],split2[2],Integer.parseInt(split2[3]), currentUser);
 
 		}else if(split[0].equals("classify")){
 			
-			classifyWine(split[1], Integer.parseInt(split[2]), currentUser);
+			classifyWine(split2[1], Integer.parseInt(split2[2]), currentUser);
 
 		}else if(split[0].equals("talk")){
 
-			talk(split[1], split[2],currentUser);
+			talk(split2[1], split2[2],currentUser);
 
 		}else if(split[0].equals("read")){
 			
