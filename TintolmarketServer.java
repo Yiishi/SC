@@ -281,7 +281,7 @@ public class TintolmarketServer{
        throw new Exception("vinho não existe");
 	}
 
-	private void talk(String user, String message) {
+	private void talk(String user, String message, User currentUser) {
 		if((new File("chat.txt")).exists()){
 			FileWriter fw= new FileWriter (chat, true);
         	BufferedWriter bw= new BufferedWriter(fw);
