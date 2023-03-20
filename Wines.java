@@ -30,6 +30,7 @@ public class Wines {
     }
 
     public int getQuantity(){
+    public int getQuantity(){
         return quantity;
     }
 
@@ -49,10 +50,15 @@ public class Wines {
 
     public void sell(int i){
        quantity-=i ;
+       quantity-=i ;
     }
 
     public void add(int i){
-        quantity += i;
+        quantity + i;
+    }
+
+    public void addClassification(int i){
+        classification.addLast(i);
     }
 
     public void classify(int i){

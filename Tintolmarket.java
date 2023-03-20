@@ -114,24 +114,27 @@ public class Tintolmarket {
         return user.getWallet();
     }
 
-    public void classify(String wine, int stars){
-        
+    public void classify( Wines wine, int stars){
+        outToServer.writeBytes("classify wine stars");
     }
 
     
     public void talk (String user, String message){
-
+        outToServer.writeBytes("talk user message");
     }
     
     
 
     public String read(){
-    	return "";
+    	outToServer.writeBytes("read");
     }
 
     
     
-    public void add(Wines wine, File image)throws Exception{
+    public void add(Wines wine, File image, int quantity)throws Exception{
+
+        outToServer.writeBytes("add wine image quantity");
+
      String name= wine.getWinename();
      br = new BufferedReader(new FileReader(wines));
      String st;
@@ -152,6 +155,9 @@ public class Tintolmarket {
     
     
     public String sell(Wines wine, double value, int quantity )throws Exception{
+        
+        outToServer.writeBytes("sell wine value quantity");
+        
         String name= wine.getWinename();
         br = new BufferedReader(new FileReader(wines));
         String st;
@@ -169,7 +175,10 @@ public class Tintolmarket {
     }
     
     
-    public void buy (User buyer, Wines wine, User seller, int quantity )throws Exception {
+    public void buy(User buyer, Wines wine, User seller, int quantity )throws Exception {
+
+        outToServer.writeBytes("buy buyer wine seller quantity");
+
     	if(!(wine.getUsername()==seller.getUsername())) {
     		throw new Exception ("vendedor não vende este vinho");
     	}
@@ -187,6 +196,7 @@ public class Tintolmarket {
     
     public String view (Wines wine) {
     	
+        outToServer.writeBytes("view wine");
     	
     	return "";
     }
