@@ -63,7 +63,7 @@ public class TintolmarketServer{
 
 	public static void main(String[] args) throws Exception{
 		System.out.println("servidor: main");
-		TintolmarketServer server = new TintolmarketServer(Integer.parseInt(args[1]));//Lidar exeção para caso o porto nao ser um Int!!!!
+		TintolmarketServer server = new TintolmarketServer(Integer.parseInt(args[0]));//Lidar exeção para caso o porto nao ser um Int!!!!
 		server.startServer(args);
 	}
 
@@ -71,10 +71,10 @@ public class TintolmarketServer{
 		ServerSocket sSoc = null;
         
 		try {
-            if (args[1] == null){
+            if (args[0] == null){
                 sSoc = new ServerSocket(12345);
             }else{
-                sSoc = new ServerSocket( Integer.parseInt(args[1]));
+                sSoc = new ServerSocket( Integer.parseInt(args[0]));
             }
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
@@ -165,35 +165,40 @@ public class TintolmarketServer{
                     }
                 }
 				
-
 				if(userExists == false){
 
-					bw.write(user+","+passwd, MIN_PRIORITY, MAX_PRIORITY);
+					bw.write(user+","+passwd);
+					bw.newLine();
+	       	    	bw.close();
 					currentUser = new User(user, 200);
-					outStream.writeBytes("user criado");
+					outStream.writeObject("user criado");
 
 				} else if(userExists == true && correctPass == true){
 
 					for(User u : userList) {
-						if(u.getUsername().equals(user)){
+						if(u.getUsername().equals(user)){ 
 							currentUser = u;
 							break;
 						}
 					}
-					outStream.writeBytes("autenticado");
+					outStream.writeObject("autenticado");
 
 				}else{
-					outStream.writeBytes("password incorreta");;
+					System.out.println("dentro do else");
+					outStream.writeObject("password incorreta");;
 					closed = true;
 				}
 
 				if(!closed){
-					outStream.writeObject(currentUser);
+					
+					outStream.writeObject(currentUser.getUsername());
+					outStream.writeObject(currentUser.getWallet());
+
 					avaluateRequest((String) inStream.readObject(), currentUser, outStream);
 				}
 				outStream.close();
 				inStream.close();
- 			
+				
 				socket.close();
 
 			} catch (IOException | ClassNotFoundException e) {
@@ -209,13 +214,13 @@ public class TintolmarketServer{
 
 		String[] split = str.split(" ", 2);
 		String[] split2 = str.split(" ");
-
+		
 		if(split[0].equals("add")){
 
 			addWine(split2[1],split2[2], outStream);
 
 		}else if(split[0].equals("sell")){
-
+			System.out.println("aqui server");
 			sellWine(split2[1], Double.parseDouble(split2[2]), Integer.parseInt(split2[3]),currentUser, outStream);
 
 		}else if(split[0].equals("view")){
@@ -316,22 +321,22 @@ public class TintolmarketServer{
 	private void sellWine(String name, double value, int quantity, User currentUser, ObjectOutputStream outStream )throws Exception{
 		if(getWine(name) == null){
 			outStream.writeObject("O vinho que pretende vender nao se encontra no catalogo");
-		}
-		Wines newWine = new Wines(name, currentUser.getUsername(), value, quantity, null);
-		winesForSaleList.add(newWine);
-//       br = new BufferedReader(new FileReader(wines));
-//       String st;
-//       while((st = br.readLine())!=null) {
+		}else{
+			System.out.println("aqui");
+			Wines newWine = new Wines(name, currentUser.getUsername(), value, quantity, null);
+			winesForSaleList.add(newWine);
+//       	br = new BufferedReader(new FileReader(wines));
+//       	String st;
+//      	while((st = br.readLine())!=null) {
 //        	if(name.equals(st)) {
 //       		FileWriter fw= new FileWriter (winesforsale, true);
 //        	    BufferedWriter bw= new BufferedWriter(fw);
 //       		bw.write( name + currentUser.getUsername()+  quantity + value);
 //        	    bw.newLine();
 //       	    bw.close();
-				outStream.writeObject("Vinho colocado a venda com sucesso");
-//      	}
-//      }
-//       throw new Exception("vinho não existe");
+			outStream.writeObject("Vinho colocado a venda com sucesso");
+		}
+		
 	}
 
 	private void talk(String user, String message, User currentUser, ObjectOutputStream outStream) throws Exception {
