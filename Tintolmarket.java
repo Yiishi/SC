@@ -15,7 +15,7 @@ public class Tintolmarket {
     private static ObjectOutputStream outToServer;
     private static ObjectInputStream inFromServer;
     
-    public static void main(String[] args) throws Exception{
+    public void main(String[] args) throws Exception{
 
         if(args.length == 4){
 
@@ -51,21 +51,21 @@ public class Tintolmarket {
         }
     }
 
-    public void avaliaAcao(String acao){
+    public void avaliaAcao(String acao ) throws Exception{
         String[] split = acao.split(" ");
 		
 		if(split[0].equals("add")){
             if(split.length == 3){
                 add(split[1],split[2]);
-                System.out.println((String) inStream.readObject());
+                System.out.println((String) inFromServer.readObject());
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
 
 		}else if(split[0].equals("sell")){
             if(split.length == 4){
-                sell(split[1],split[2],split[3]);
-                System.out.println((String) inStream.readObject());
+                sell(split[1],Double.parseDouble(split[2]),Integer.parseInt(split[3]));
+                System.out.println((String) inFromServer.readObject());
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
@@ -73,48 +73,48 @@ public class Tintolmarket {
 		}else if(split[0].equals("view")){
 			if(split.length == 2){
                 view(split[1]);
-                System.out.println((String) inStream.readObject());
+                System.out.println((String) inFromServer.readObject());
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
 
 		}else if(split[0].equals("buy")){
             if(split.length == 4){
-                buy(split[1],split[2],split[3]);
-                System.out.println((String) inStream.readObject());
+                buy(split[1],split[2],Integer.parseInt(split[3]));
+                System.out.println((String) inFromServer.readObject());
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
             
         }else if(split[0].equals("wallet")){
             if(split.length == 1){
-                System.out.println(wallet(););
+                System.out.println(wallet());
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
 			
 		}else if(split[0].equals("classify")){
 			if(split.length == 3){
-                classify(split[1],split[2]);
-                System.out.println((String) inStream.readObject());
+                classify(split[1],Integer.parseInt(split[2]));
+                System.out.println((String) inFromServer.readObject());
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
 
 		}else if(split[0].equals("talk")){
             StringBuilder msg = new StringBuilder();
-            for(int i = 2; i < split.length(); i++){
+            for(int i = 2; i < split.length; i++){
                 msg.append(split[i]);
                 msg.append(" ");
             }
             talk(split[1],msg.toString());
-            System.out.println((String) inStream.readObject());
+            System.out.println((String) inFromServer.readObject());
             
 			
 		}else if(split[0].equals("read")){
             if(split.length == 1){
                 read();
-                System.out.println((String) inStream.readObject());
+                System.out.println((String) inFromServer.readObject());
             }else{
                 System.out.println("Por favor preencha todos os requisirtos corretamente");
             }
@@ -137,8 +137,8 @@ public class Tintolmarket {
     	outToServer.writeBytes("read");
     }
 
-    public void add(String wine, File image, int quantity, double value)throws Exception{
-        outToServer.writeBytes("add " + wine + " "  + quantity+ " "+ value);
+    public void add(String wine, String image)throws Exception{
+        outToServer.writeBytes("add " + wine );
     }
     
     public void sell(String wine, double value, int quantity )throws Exception{

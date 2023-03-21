@@ -23,6 +23,7 @@ public class TintolmarketServer{
 	File wines = new File("wines.txt");
 	File users = new File ("userLog.txt");
 	File winesforsale = new File("winesforsale.txt");
+	File chat = new File ("chat.txt");
 	private int port;
 	private ArrayList<User> userList;
 	private ArrayList<Wines> winesList;
@@ -55,7 +56,7 @@ public class TintolmarketServer{
 		String split3[] = new String[2];
         while((st3 = br.readLine())!=null) {
 			split3 = st3.split(" ");
-			winesForSaleList.add(new Wines(split2[0], null, null, null,split2[1]));
+			winesForSaleList.add(new Wines(split2[0], "", 0, 0,split2[1]));
 		}
 
 	}
@@ -96,7 +97,7 @@ public class TintolmarketServer{
 	
 	public User getUser(String userID)throws Exception{
 		for( User i : userList) {
-			if(i.getUsername() == UserID) {
+			if(i.getUsername() == userID) {
 				return i;
 			}
 		}
@@ -105,7 +106,7 @@ public class TintolmarketServer{
 	
 	public Wines getWine(String wineID)throws Exception{
 		for( Wines i : winesList) {
-			if(i.getWinename() == WineID) {
+			if(i.getWinename() == wineID) {
 				return i;
 			}
 		}
@@ -114,7 +115,7 @@ public class TintolmarketServer{
 
 	public Wines getWineForSale(String wineID)throws Exception{
 		for( Wines i : winesForSaleList) {
-			if(i.getWinename() == WineID) {
+			if(i.getWinename() == wineID) {
 				return i;
 			}
 		}
@@ -188,7 +189,7 @@ public class TintolmarketServer{
 
 				if(!closed){
 					outStream.writeObject(currentUser);
-					avaluateRequest((String) inStream.readObject(), currentUser);
+					avaluateRequest((String) inStream.readObject(), currentUser, outStream);
 				}
 				outStream.close();
 				inStream.close();
@@ -204,85 +205,46 @@ public class TintolmarketServer{
 		}
 	}
 
-	public void avaluateRequest(String str, User currentUser) throws Exception{
+	public void avaluateRequest(String str, User currentUser, ObjectOutputStream outStream) throws Exception{
 
 		String[] split = str.split(" ", 2);
 		String[] split2 = str.split(" ");
 
 		if(split[0].equals("add")){
 
-			addWine(split2[1],Integer.parseInt(split2[2]),currentUser, Double.parseDouble(split2[3]));
+			addWine(split2[1],split2[2], outStream);
 
 		}else if(split[0].equals("sell")){
 
-			sellWine(split2[1], Double.parseDouble(split2[2]), Integer.parseInt(split2[3]),currentUser);
+			sellWine(split2[1], Double.parseDouble(split2[2]), Integer.parseInt(split2[3]),currentUser, outStream);
 
 		}else if(split[0].equals("view")){
 
-			viewWine(currentUser,split2[1]);
+			viewWine(currentUser,split2[1], outStream);
 
 		}else if(split[0].equals("buy")){
 
-			buyWine(split2[1],split2[2],Integer.parseInt(split2[3]), currentUser);
+			buyWine(split2[1],split2[2],Integer.parseInt(split2[3]), currentUser, outStream);
 
 		}else if(split[0].equals("classify")){
 			
-			classifyWine(split2[1], Integer.parseInt(split2[2]), currentUser);
+			classifyWine(split2[1], Integer.parseInt(split2[2]), currentUser, outStream);
 
 		}else if(split[0].equals("talk")){
 
-			talk(split2[1], split2[2],currentUser);
+			talk(split2[1], split2[2],currentUser, outStream);
 
 		}else if(split[0].equals("read")){
 			
-			readMessege(currentUser);
+			readMessege(currentUser,outStream);
 		}
 		
 	}
 
-	/**
-	 * @param request
-	 *
-	public void processRquest(request request){
-		User currentUser;
-		switch(request){
-			case ADD:
-				addWine(currentUser);
-				break;
 
-			case BUY:
-				buyWine(currentUser);
-				break;
-				
-			case CLASSIFY:
-				classifyWine(wine, stars, currentUser);
-				break;
-
-			case READ:
-				readMessege(currentUser);
-				break;
-
-			case SELL:
-				sellWine(wine, quantity, currentUser);
-				break;
-
-			case TALK:
-				talk(currentUser);
-				break;
-
-			case VIEW:
-				viewWine(currentUser);
-				break;
-				
-			default:
-				break;
-
-		}
-	}**/
-
-	private void addWine(String wine, File image)throws Exception {
+	private void addWine(String wine, String image, ObjectOutputStream outStream)throws Exception {
 		if(getWine(wine) == null){
-			Wines newWine = new Wines(wine, null, null, null, image);
+			Wines newWine = new Wines(wine, "", 0, 0, image);
 			winesList.add(newWine);
 //			FileWriter fw= new FileWriter (wines, true);
 //			BufferedWriter bw= new BufferedWriter(fw);
@@ -295,13 +257,13 @@ public class TintolmarketServer{
 		}
 	}
 	
-	private void buyWine(String wineID,String sellerID,int quantity,User currentUser)throws Exception {
+	private void buyWine(String wineID,String sellerID,int quantity,User currentUser, ObjectOutputStream outStream)throws Exception {
 		Wines wine = getWineForSale(wineID);
 		if(!(wine == null)) {
 //			throw new Exception ("Ocorreu um erro, vinho não está registado para venda");
 			outStream.writeObject("Ocorreu um erro, vinho não está registado para venda");	
 
-		}else if(!(wine.username == sellerID)) {
+		}else if(!(wine.getUsername() == sellerID)) {
 //	            throw new Exception ("vendedor não vende este vinho");
 				outStream.writeObject("vendedor não vende este vinho");
 
@@ -323,18 +285,18 @@ public class TintolmarketServer{
 		}
 	}
 
-	private void classifyWine(String wine, int stars, User currentUser) {
-		if(getWine(wine) == null){
+	private void classifyWine(String wineID, int stars, User currentUser,ObjectOutputStream outStream) throws Exception {
+		if(getWine(wineID) == null){
 			outStream.writeObject("O vinho que pretende avaliar nao se encontra no catalogo");
 		}else{
-			Wines wine = getWine(wine);
+			Wines wine = getWine(wineID);
 			wine.classify(stars);
 			outStream.writeObject("Obrigado pela sua avaliacao");
 		}
 	}
 	
 
-	private void readMessege(User currentUser) {
+	private void readMessege(User currentUser, ObjectOutputStream outStream) throws Exception{
 		br = new BufferedReader(new FileReader("chat.txt"));
 		boolean noMSG = true;
 		String st9;
@@ -351,7 +313,7 @@ public class TintolmarketServer{
 		outStream.writeObject(msg.toString());
 	}
 
-	private void sellWine(String name, double value, int quantity, User currentUser )throws Exception{
+	private void sellWine(String name, double value, int quantity, User currentUser, ObjectOutputStream outStream )throws Exception{
 		if(getWine(name) == null){
 			outStream.writeObject("O vinho que pretende vender nao se encontra no catalogo");
 		}
@@ -372,7 +334,7 @@ public class TintolmarketServer{
 //       throw new Exception("vinho não existe");
 	}
 
-	private void talk(String user, String message, User currentUser) {
+	private void talk(String user, String message, User currentUser, ObjectOutputStream outStream) throws Exception {
 		if((new File("chat.txt")).exists()){
 			FileWriter fw= new FileWriter (chat, true);
         	BufferedWriter bw= new BufferedWriter(fw);
@@ -393,10 +355,10 @@ public class TintolmarketServer{
 
 	}
 	
-	private void viewWine(User currentUser,String wineID)throws Exception {
+	private void viewWine(User currentUser,String wineID, ObjectOutputStream outStream)throws Exception {
 		Wines wine = getWine(wineID);
 		File image= new File(wine + ".png");
-		wine.correspondImage(image);
+
 	}
 
 }

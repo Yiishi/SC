@@ -42,7 +42,7 @@ public class Wines {
         return sum/count ;
     }
 
-    public File getimage(){
+    public String getimage(){
         return image;
     }
 
