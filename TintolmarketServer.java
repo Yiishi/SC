@@ -26,6 +26,7 @@ public class TintolmarketServer{
 	private int port;
 	private ArrayList<User> userList;
 	private ArrayList<Wines> winesList;
+	private ArrayList<Wines> winesForSaleList;
 
 	public TintolmarketServer(int port) throws Exception{
 		this.port = port;
