@@ -335,7 +335,7 @@ public class TintolmarketServer{
 
 	private void readMessege(User currentUser) {
 		br = new BufferedReader(new FileReader("chat.txt"));
-		boolean noMSG = true
+		boolean noMSG = true;
 		String st9;
 		String split9[] = new String[3];
 		StringBuilder msg = new StringBuilder();
@@ -343,8 +343,8 @@ public class TintolmarketServer{
 			split9 = st9.split("/");
 			if(split9[0].equals(currentUser.getUsername())){
 				msg.append(split9[1]).append("  Message from : ").append(split9[2]);
-				msg.append("/n")
-				noMSG = false
+				msg.append("/n");
+				noMSG = false;
 			}
 		}
 		outStream.writeObject(msg.toString());
