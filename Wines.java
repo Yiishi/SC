@@ -7,9 +7,9 @@ public class Wines {
     private double price;
     private ArrayList<Integer> classification;
     private int quantity;
-    private File image;
+    private String image;
 
-    public Wines(String winename ,String username , double price , int quantity , File image ){
+    public Wines(String winename ,String username , double price , int quantity , String image ){
     	this.winename = winename;
         this.username = username;
         this.price = price;
@@ -56,9 +56,6 @@ public class Wines {
 
     public void classify(int i){
         classification.add(i);
-    }
-    public void correspondImage(File image) {
-    	this.image = image;
     }
 
 
