@@ -130,7 +130,7 @@ public class Tintolmarket {
     }
 
     public void talk (String user, String message)throws Exception{
-        outToServer.writeBytes("talk " + user + " " + message);
+        outToServer.writeBytes("talk/" + user + "/" + message);
     }
     
     public void read()throws Exception{
