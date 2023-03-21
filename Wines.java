@@ -57,6 +57,4 @@ public class Wines {
     public void classify(int i){
         classification.add(i);
     }
-
-
 }
