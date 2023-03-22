@@ -183,7 +183,6 @@ public class TintolmarketServer {
 					outStream.writeObject("autenticado");
 
 				} else {
-					System.out.println("dentro do else");
 					outStream.writeObject("password incorreta");
 					closed = true;
 				}
@@ -218,7 +217,7 @@ public class TintolmarketServer {
 			addWine(split2[1], split2[2], outStream);
 
 		} else if (split[0].equals("sell")) {
-			System.out.println("aqui server");
+
 			sellWine(split2[1], Double.parseDouble(split2[2]), Integer.parseInt(split2[3]), currentUser, outStream);
 
 		} else if (split[0].equals("view")) {
@@ -233,11 +232,12 @@ public class TintolmarketServer {
 
 			classifyWine(split2[1], Integer.parseInt(split2[2]), currentUser, outStream);
 
-		} else if (split[0].equals("talk")) {
+		} else if (split[0].contains("talk")) {
+			System.out.println("avaliaRequest");
+			String[] split3 = str.split("/");
+			talk(split3[1], split3[2], currentUser, outStream);
 
-			talk(split2[1], split2[2], currentUser, outStream);
-
-		} else if (split[0].equals("read")) {
+		} else if (str.equals("read")) {
 
 			readMessege(currentUser, outStream);
 		}
@@ -262,7 +262,6 @@ public class TintolmarketServer {
 	private void buyWine(String wineID, String sellerID, int quantity, User currentUser, ObjectOutputStream outStream)
 			throws Exception {
 		Wines wine = getWineForSale(wineID);
-		System.out.println(wine.getWinename()+" , "+wine.getPrice()+" , "+wine.getQuantity());
 		if ((wine == null)) {
 			// throw new Exception ("Ocorreu um erro, vinho não está registado para venda");
 			outStream.writeObject("Ocorreu um erro, vinho nao esta registado para venda");
@@ -322,7 +321,6 @@ public class TintolmarketServer {
 		if (getWine(name) == null) {
 			outStream.writeObject("O vinho que pretende vender nao se encontra no catalogo");
 		} else {
-			System.out.println("aqui");
 			Wines newWine = new Wines(name, currentUser.getUsername(), value, quantity, null);
 			System.out.println(value + " , "+ newWine.getPrice());
 			winesForSaleList.add(newWine);
@@ -341,6 +339,7 @@ public class TintolmarketServer {
 	}
 
 	private void talk(String user, String message, User currentUser, ObjectOutputStream outStream) throws Exception {
+		System.out.println("aqui");
 		if ((new File("chat.txt")).exists()) {
 			FileWriter fw = new FileWriter(chat, true);
 			BufferedWriter bw = new BufferedWriter(fw);
@@ -359,9 +358,6 @@ public class TintolmarketServer {
 			outStream.writeObject("Mensagem enviada");
 		}
 		
-		br = new BufferedReader(new FileReader("chat.txt"));
-		String st;
-		while ((st = br.readLine()) != null) {}
 	}
 
 	private void viewWine(User currentUser, String wineID, ObjectOutputStream outStream) throws Exception {

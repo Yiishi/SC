@@ -115,6 +115,7 @@ public class Tintolmarket {
                 msg.append(split[i]);
                 msg.append(" ");
             }
+            
             talk(split[1], msg.toString());
             System.out.println((String) inFromServer.readObject());
 
@@ -137,6 +138,7 @@ public class Tintolmarket {
     }
 
     public static void talk(String user, String message) throws Exception {
+        System.out.println("talk");
         outToServer.writeObject("talk/" + user + "/" + message);
     }
 
