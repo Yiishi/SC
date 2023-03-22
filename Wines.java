@@ -1,9 +1,8 @@
-import java.io.*;
 import java.util.ArrayList;
 public class Wines {
 
     private String username;
-    String winename;
+    private String winename;
     private double price;
     private ArrayList<Integer> classification;
     private int quantity;
