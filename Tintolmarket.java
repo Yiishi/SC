@@ -43,7 +43,7 @@ public class Tintolmarket {
             user = new User(userId, wallet);
 
             while (1 == 1) {
-                System.out.println("Menu");
+                System.out.println("\nMenu");
                 System.out.println("Adicionar um vinho ao catalogo : add wineName image");
                 System.out.println("Colocar um vinho do catalogo a venda: sell wineName value quantity");
                 System.out.println("Ver um vinho: view wineName");
@@ -62,54 +62,54 @@ public class Tintolmarket {
     public static void avaliaAcao(String acao) throws Exception {
         String[] split = acao.split(" ");
 
-        if (split[0].equals("add")) {
+        if (split[0].equals("add") || split[0].equals("a")) {
             if (split.length == 3) {
                 add(split[1], split[2]);
                 System.out.println((String) inFromServer.readObject());
             } else {
-                System.out.println("Por favor preencha todos os requisirtos corretamente");
+                System.out.println("Por favor preencha todos os requisitos corretamente");
             }
 
-        } else if (split[0].equals("sell")) {
+        } else if (split[0].equals("sell") || split[0].equals("s")) {
             if (split.length == 4) {
                 sell(split[1], Double.parseDouble(split[2]), Integer.parseInt(split[3]));
                 System.out.println((String) inFromServer.readObject());
             } else {
-                System.out.println("Por favor preencha todos os requisirtos corretamente");
+                System.out.println("Por favor preencha todos os requisitos corretamente");
             }
 
-        } else if (split[0].equals("view")) {
+        } else if (split[0].equals("view") || split[0].equals("v")) {
             if (split.length == 2) {
                 view(split[1]);
                 System.out.println((String) inFromServer.readObject());
             } else {
-                System.out.println("Por favor preencha todos os requisirtos corretamente");
+                System.out.println("Por favor preencha todos os requisitos corretamente");
             }
 
-        } else if (split[0].equals("buy")) {
+        } else if (split[0].equals("buy") || split[0].equals("b")) {
             if (split.length == 4) {
                 buy(split[1], split[2], Integer.parseInt(split[3]));
                 System.out.println((String) inFromServer.readObject());
             } else {
-                System.out.println("Por favor preencha todos os requisirtos corretamente");
+                System.out.println("Por favor preencha todos os requisitos corretamente");
             }
 
-        } else if (split[0].equals("wallet")) {
+        } else if (split[0].equals("wallet") || split[0].equals("w")) {
             if (split.length == 1) {
                 System.out.println(wallet());
             } else {
-                System.out.println("Por favor preencha todos os requisirtos corretamente");
+                System.out.println("Por favor preencha todos os requisitos corretamente");
             }
 
-        } else if (split[0].equals("classify")) {
+        } else if (split[0].equals("classify") || split[0].equals("c")) {
             if (split.length == 3) {
                 classify(split[1], Integer.parseInt(split[2]));
                 System.out.println((String) inFromServer.readObject());
             } else {
-                System.out.println("Por favor preencha todos os requisirtos corretamente");
+                System.out.println("Por favor preencha todos os requisitos corretamente");
             }
 
-        } else if (split[0].equals("talk")) {
+        } else if (split[0].equals("talk") || split[0].equals("t")) {
             StringBuilder msg = new StringBuilder();
             for (int i = 2; i < split.length; i++) {
                 msg.append(split[i]);
@@ -119,13 +119,15 @@ public class Tintolmarket {
             talk(split[1], msg.toString());
             System.out.println((String) inFromServer.readObject());
 
-        } else if (split[0].equals("read")) {
+        } else if (split[0].equals("read") || split[0].equals("r")) {
             if (split.length == 1) {
                 read();
                 System.out.println((String) inFromServer.readObject());
             } else {
-                System.out.println("Por favor preencha todos os requisirtos corretamente");
+                System.out.println("Por favor preencha todos os requisitos corretamente");
             }
+        } else {
+            System.out.println("Por favor preencha todos os requisitos corretamente");
         }
     }
 

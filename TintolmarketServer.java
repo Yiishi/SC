@@ -340,22 +340,27 @@ public class TintolmarketServer {
 
 	private void talk(String user, String message, User currentUser, ObjectOutputStream outStream) throws Exception {
 		System.out.println("aqui");
-		if ((new File("chat.txt")).exists()) {
-			FileWriter fw = new FileWriter(chat, true);
-			BufferedWriter bw = new BufferedWriter(fw);
-			bw.write(user + "/" + message + "/" + currentUser.getUsername());
-			bw.newLine();
-			bw.close();
-			outStream.writeObject("Mensagem enviada");
-		} else {
-			File f = new File("chat.txt");
-			f.createNewFile();
-			FileWriter fw = new FileWriter(chat, true);
-			BufferedWriter bw = new BufferedWriter(fw);
-			bw.write(user + "/" + message + "/" + currentUser.getUsername());
-			bw.newLine();
-			bw.close();
-			outStream.writeObject("Mensagem enviada");
+
+		if(getUser(user) == null){
+			outStream.writeObject("Usuario nao existente");
+		}else{
+			if ((new File("chat.txt")).exists()) {
+				FileWriter fw = new FileWriter(chat, true);
+				BufferedWriter bw = new BufferedWriter(fw);
+				bw.write(user + "/" + message + "/" + currentUser.getUsername());
+				bw.newLine();
+				bw.close();
+				outStream.writeObject("Mensagem enviada");
+			} else {
+				File f = new File("chat.txt");
+				f.createNewFile();
+				FileWriter fw = new FileWriter(chat, true);
+				BufferedWriter bw = new BufferedWriter(fw);
+				bw.write(user + "/" + message + "/" + currentUser.getUsername());
+				bw.newLine();
+				bw.close();
+				outStream.writeObject("Mensagem enviada");
+			}
 		}
 		
 	}
