@@ -8,6 +8,7 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -22,7 +23,8 @@ public class TintolmarketServer {
 	BufferedReader br;
 	BufferedReader br2;
 	File wines = new File("wines.txt");
-	File users = new File("userLog.txt");
+	File userlog = new File("userLog.txt");
+	File users = new File("users.txt");
 	File winesforsale = new File("winesforsale.txt");
 	File chat = new File("chat.txt");
 	private int port;
@@ -181,11 +183,21 @@ public class TintolmarketServer {
 						}
 					}
 					outStream.writeObject("autenticado");
+				
+				
 
 				} else {
 					outStream.writeObject("password incorreta");
 					closed = true;
 				}
+
+				FileWriter fw= new FileWriter (userlog, true);
+				String s = user + " " + passwd;
+				writeFile(fw, s);
+
+				FileWriter fw1= new FileWriter (users, true);
+				String s1 = user + " 200";
+				writeFile(fw1, s1);
 
 				outStream.writeObject(currentUser.getUsername());
 				outStream.writeObject(currentUser.getWallet());
@@ -248,7 +260,9 @@ public class TintolmarketServer {
 		if (getWine(wine) == null) {
 			Wines newWine = new Wines(wine, "", 0, 0, image);
 			winesList.add(newWine);
-			// FileWriter fw= new FileWriter (wines, true);
+			FileWriter fw= new FileWriter (wines, true);
+			String s = wine + " " + image;
+			writeFile(fw, s);
 			// BufferedWriter bw= new BufferedWriter(fw);
 			// bw.write( wine + image);
 			// bw.newLine();
@@ -328,9 +342,10 @@ public class TintolmarketServer {
 			// String st;
 			// while((st = br.readLine())!=null) {
 			// if(name.equals(st)) {
-			// FileWriter fw= new FileWriter (winesforsale, true);
+			FileWriter fw= new FileWriter (winesforsale, true);
 			// BufferedWriter bw= new BufferedWriter(fw);
-			// bw.write( name + currentUser.getUsername()+ quantity + value);
+			String s = name + " " + currentUser.getUsername() + " " + quantity + " " + value;
+			writeFile(fw, s);
 			// bw.newLine();
 			// bw.close();
 			outStream.writeObject("Vinho colocado a venda com sucesso");
@@ -369,6 +384,18 @@ public class TintolmarketServer {
 		Wines wine = getWine(wineID);
 		File image = new File(wine + ".png");
 
+	}
+
+	private void writeFile(FileWriter f, String s) throws IOException{
+		BufferedWriter bw = new BufferedWriter(f);
+		bw.write(s);
+		bw.newLine();
+		bw.close();
+
+	}
+
+	private static void deleteLineFromFile(String filename, ArrayList list) throws IOException {
+		
 	}
 
 }
