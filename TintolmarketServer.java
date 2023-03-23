@@ -12,6 +12,9 @@ import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.net.ServerSocket;
@@ -38,6 +41,12 @@ public class TintolmarketServer {
 		winesList = new ArrayList<Wines>();
 		winesForSaleList = new ArrayList<Wines>();
 
+		userList = (ArrayList<User>) readObjectFromFile(users);
+		winesList = (ArrayList<Wines>) readObjectFromFile(wines);
+		winesForSaleList = (ArrayList<Wines>) readObjectFromFile(winesforsale);
+
+
+		/** 
 		br = new BufferedReader(new FileReader("users.txt"));
 		String st;
 		String split[] = new String[3];
@@ -62,7 +71,7 @@ public class TintolmarketServer {
 			split3 = st3.split(" ");
 			winesForSaleList.add(new Wines(split2[0], "", 0, 0, split2[1]));
 		}
-
+		*/
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -172,6 +181,7 @@ public class TintolmarketServer {
 
 					currentUser = new User(user, 200);
 					userList.add(currentUser);
+					writeObjectToFile(users, userList);
 					outStream.writeObject("user criado");
 
 				} else if (userExists == true && correctPass == true) {
@@ -195,9 +205,11 @@ public class TintolmarketServer {
 				String s = user + " " + passwd;
 				writeFile(fw, s);
 
+				/** 
 				FileWriter fw1= new FileWriter (users, true);
 				String s1 = user + " 200";
 				writeFile(fw1, s1);
+				*/
 
 				outStream.writeObject(currentUser.getUsername());
 				outStream.writeObject(currentUser.getWallet());
@@ -260,9 +272,13 @@ public class TintolmarketServer {
 		if (getWine(wine) == null) {
 			Wines newWine = new Wines(wine, "", 0, 0, image);
 			winesList.add(newWine);
-			FileWriter fw= new FileWriter (wines, true);
+
+			/**FileWriter fw= new FileWriter (wines, true);
 			String s = wine + " " + image;
-			writeFile(fw, s);
+			writeFile(fw, s);*/
+
+			writeObjectToFile(wines, winesList);
+
 			// BufferedWriter bw= new BufferedWriter(fw);
 			// bw.write( wine + image);
 			// bw.newLine();
@@ -294,6 +310,7 @@ public class TintolmarketServer {
 
 		} else {
 			wine.sell(quantity);
+			writeObjectToFile(winesforsale, winesForSaleList);
 			User seller = getUser(sellerID);
 			seller.Soldsomething(wine.getPrice());
 			currentUser.Boughtsomething(wine.getPrice());
@@ -309,6 +326,7 @@ public class TintolmarketServer {
 		} else {
 			Wines wine = getWine(wineID);
 			wine.classify(stars);
+			writeObjectToFile(winesforsale, winesForSaleList);
 			outStream.writeObject("Obrigado pela sua avaliacao");
 		}
 	}
@@ -338,16 +356,7 @@ public class TintolmarketServer {
 			Wines newWine = new Wines(name, currentUser.getUsername(), value, quantity, null);
 			System.out.println(value + " , "+ newWine.getPrice());
 			winesForSaleList.add(newWine);
-			// br = new BufferedReader(new FileReader(wines));
-			// String st;
-			// while((st = br.readLine())!=null) {
-			// if(name.equals(st)) {
-			FileWriter fw= new FileWriter (winesforsale, true);
-			// BufferedWriter bw= new BufferedWriter(fw);
-			String s = name + " " + currentUser.getUsername() + " " + quantity + " " + value;
-			writeFile(fw, s);
-			// bw.newLine();
-			// bw.close();
+			writeObjectToFile(winesforsale, winesForSaleList);
 			outStream.writeObject("Vinho colocado a venda com sucesso");
 		}
 
@@ -386,6 +395,21 @@ public class TintolmarketServer {
 
 	}
 
+	private void writeObjectToFile(File f, Object o) throws IOException{
+		FileOutputStream fos = new FileOutputStream(f);
+		ObjectOutputStream oos = new ObjectOutputStream(fos);
+		oos.writeObject(o);
+		oos.close();
+	}
+
+	private Object readObjectFromFile(File f) throws IOException, ClassNotFoundException{
+		FileInputStream fi = new FileInputStream(f);
+		ObjectInputStream oi = new ObjectInputStream(fi);
+		Object o = oi.readObject();
+		oi.close();
+		return o;
+	}
+
 	private void writeFile(FileWriter f, String s) throws IOException{
 		BufferedWriter bw = new BufferedWriter(f);
 		bw.write(s);
@@ -393,9 +417,21 @@ public class TintolmarketServer {
 		bw.close();
 
 	}
-
-	private static void deleteLineFromFile(String filename, ArrayList list) throws IOException {
-		
+	/** 
+	private void rewriteUsers() throws IOException {
+		FileWriter fw= new FileWriter (users, false);
+		for (User u : userList) {
+			String s = u.getUsername() + " " + u.getWallet();
+			writeFile(fw, s);
+		}
 	}
 
+	private void rewriteWineforsale() throws IOException {
+		FileWriter fw= new FileWriter (winesforsale, false);
+		for (Wines w : winesForSaleList) {
+			String s = w.getWinename() + " " + w.getUsername() + " " + w.get;
+			writeFile(fw, s);
+		}
+	}
+	*/
 }
