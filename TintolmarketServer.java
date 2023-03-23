@@ -6,11 +6,14 @@
 ***************************************************************************/
 
 import java.io.IOException;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -34,6 +37,8 @@ public class TintolmarketServer {
 	private ArrayList<User> userList;
 	private ArrayList<Wines> winesList;
 	private ArrayList<Wines> winesForSaleList;
+	private DataOutputStream dataOutputStream;
+	private DataInputStream dataInputStream;
 
 	public TintolmarketServer(int port) throws Exception {
 		this.port = port;
@@ -149,7 +154,15 @@ public class TintolmarketServer {
 			try {
 				ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 				ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
-
+				dataOutputStream = new DataOutputStream(socket.getOutputStream());
+				dataInputStream = new DataInputStream(socket.getInputStream());
+				File diretorio = new File("\\images");
+				if(!diretorio.exists()) {
+					diretorio.mkdirs();
+				}else {
+					System.out.println("Diretorio ja existente");
+				}
+				
 				String user = null;
 				String passwd = null;
 
@@ -271,6 +284,10 @@ public class TintolmarketServer {
 	private void addWine(String wine, String image, ObjectOutputStream outStream) throws Exception {
 		if (getWine(wine) == null) {
 			Wines newWine = new Wines(wine, "", 0, 0, image);
+			byte[] buffer = new byte[Integer.MAX_VALUE];
+		    int bytes = dataInputStream.read(buffer,0,buffer.length);
+		    FileOutputStream f = new FileOutputStream("images\\"+image);
+		    f.write(buffer,0,bytes);
 			winesList.add(newWine);
 
 			/**FileWriter fw= new FileWriter (wines, true);
@@ -391,8 +408,12 @@ public class TintolmarketServer {
 
 	private void viewWine(User currentUser, String wineID, ObjectOutputStream outStream) throws Exception {
 		Wines wine = getWine(wineID);
-		File image = new File(wine + ".png");
-
+		Wines wine2 = getWineForSale(wineID);
+		outStream.writeObject("Vinho : "+wine2.getWinename()+ " vendido por: "+wine2.getUsername()+ " preço: "+wine2.getPrice()+" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine2.getClassify());
+	    byte[] buffer = new byte[Integer.MAX_VALUE];
+	    FileInputStream f = new FileInputStream("images\\ "+wine.getimage());
+	    int bytes = f.read(buffer,0,buffer.length);
+	    dataOutputStream.write(buffer,0,bytes);
 	}
 
 	private void writeObjectToFile(File f, Object o) throws IOException{
