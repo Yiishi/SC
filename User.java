@@ -1,3 +1,9 @@
+/**
+ * @author Diogo Matos fc52808
+ * @author David Guilherme fc56333
+ * @author Vitor Medeiros fc56351
+ */
+
 public class User {
 
     private String username;
