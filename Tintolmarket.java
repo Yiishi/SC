@@ -17,45 +17,51 @@ public class Tintolmarket {
     private static ObjectInputStream inFromServer;
 
     public static void main(String[] args) throws Exception {
+        try {
+            if (args.length == 3) {
 
-        if (args.length == 3) {
+                String[] st = args[0].split(":");
 
-            String[] st = args[0].split(":");
+                if (st.length == 2) {
+                    portNumber = Integer.parseInt(st[1]);
+                } else {
+                    portNumber = 12345;
+                }
 
-            if (st.length == 2) {
-                portNumber = Integer.parseInt(st[1]);
-            } else {
-                portNumber = 12345;
+                clientSocket = new Socket(st[0]/* hostname */, portNumber);
+                outToServer = new ObjectOutputStream(clientSocket.getOutputStream());
+                inFromServer = new ObjectInputStream(clientSocket.getInputStream());
+
+                outToServer.writeObject(args[1]);
+                outToServer.writeObject(args[2]);
+                Scanner ler = new Scanner(System.in);
+
+                System.out.println((String) inFromServer.readObject() + "\n");
+
+                String userId = (String) inFromServer.readObject();
+                int wallet = (int) inFromServer.readObject();
+                user = new User(userId, wallet);
+
+                while (1 == 1) {
+                    System.out.println("\nMenu");
+                    System.out.println("Adicionar um vinho ao catalogo : add wineName image");
+                    System.out.println("Colocar um vinho do catalogo a venda: sell wineName value quantity");
+                    System.out.println("Ver um vinho: view wineName");
+                    System.out.println("Comprar vinho: buy wineName seller quantity");
+                    System.out.println("Verificar carteira: wallet");
+                    System.out.println("Classificar vinho: classify wineName stars");
+                    System.out.println("Enviar mensagem: talk user message");
+                    System.out.println("Ler mensagens: read \n");
+
+                    String acao = ler.nextLine();
+                    avaliaAcao(acao);
+                }
             }
-
-            clientSocket = new Socket(st[0]/* hostname */, portNumber);
-            outToServer = new ObjectOutputStream(clientSocket.getOutputStream());
-            inFromServer = new ObjectInputStream(clientSocket.getInputStream());
-
-            outToServer.writeObject(args[1]);
-            outToServer.writeObject(args[2]);
-            Scanner ler = new Scanner(System.in);
-
-            System.out.println((String) inFromServer.readObject() + "\n");
-
-            String userId = (String) inFromServer.readObject();
-            int wallet = (int) inFromServer.readObject();
-            user = new User(userId, wallet);
-
-            while (1 == 1) {
-                System.out.println("\nMenu");
-                System.out.println("Adicionar um vinho ao catalogo : add wineName image");
-                System.out.println("Colocar um vinho do catalogo a venda: sell wineName value quantity");
-                System.out.println("Ver um vinho: view wineName");
-                System.out.println("Comprar vinho: buy wineName seller quantity");
-                System.out.println("Verificar carteira: wallet");
-                System.out.println("Classificar vinho: classify wineName stars");
-                System.out.println("Enviar mensagem: talk user message");
-                System.out.println("Ler mensagens: read \n");
-
-                String acao = ler.nextLine();
-                avaliaAcao(acao);
-            }
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            outToServer.close();
+            inFromServer.close();				
+            clientSocket.close();
         }
     }
 

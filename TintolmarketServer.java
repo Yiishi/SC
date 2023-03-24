@@ -202,7 +202,9 @@ public class TintolmarketServer {
 				e.printStackTrace();
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				outStream.close();
+				inStream.close();				
+				socket.close();
 			}
 		}
 	}
