@@ -31,6 +31,8 @@ public class Tintolmarket {
                 clientSocket = new Socket(st[0]/* hostname */, portNumber);
                 outToServer = new ObjectOutputStream(clientSocket.getOutputStream());
                 inFromServer = new ObjectInputStream(clientSocket.getInputStream());
+                dataInputStream = new DataInputStream(clientSocket.getInputStream());
+                dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
 
                 outToServer.writeObject(args[1]);
                 outToServer.writeObject(args[2]);
@@ -72,6 +74,10 @@ public class Tintolmarket {
             if (split.length == 3) {
                 add(split[1], split[2]);
                 System.out.println((String) inFromServer.readObject());
+                byte[] buffer = new byte[Integer.MAX_VALUE];
+                FileInputStream f = new FileInputStream(image);
+                int bytes = f.read(buffer,0,buffer.length);
+                dataOutputStream.write(buffer,0,bytes);
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");
             }
@@ -88,6 +94,10 @@ public class Tintolmarket {
             if (split.length == 2) {
                 view(split[1]);
                 System.out.println((String) inFromServer.readObject());
+                byte[] buffer = new byte[Integer.MAX_VALUE];
+		        int bytes = dataInputStream.read(buffer,0,buffer.length);
+		        FileOutputStream f = new FileOutputStream(split[1]_image);
+		        f.write(buffer,0,bytes);
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");
             }
