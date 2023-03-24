@@ -77,10 +77,12 @@ public class Tintolmarket {
             if (split.length == 3) {
                 add(split[1], split[2]);
                 System.out.println((String) inFromServer.readObject());
+                /** 
                 byte[] buffer = new byte[Integer.MAX_VALUE];
                 FileInputStream f = new FileInputStream(split[2]);
                 int bytes = f.read(buffer,0,buffer.length);
                 dataOutputStream.write(buffer,0,bytes);
+                */
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");
             }
@@ -97,10 +99,12 @@ public class Tintolmarket {
             if (split.length == 2) {
                 view(split[1]);
                 System.out.println((String) inFromServer.readObject());
+                /** 
                 byte[] buffer = new byte[Integer.MAX_VALUE];
 		        int bytes = dataInputStream.read(buffer,0,buffer.length);
 		        FileOutputStream f = new FileOutputStream(split[1]+"_image");
 		        f.write(buffer,0,bytes);
+                */
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");
             }
@@ -115,7 +119,8 @@ public class Tintolmarket {
 
         } else if (split[0].equals("wallet") || split[0].equals("w")) {
             if (split.length == 1) {
-                System.out.println(wallet());
+                wallet();
+                System.out.println((String) inFromServer.readObject());
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");
             }
@@ -150,8 +155,8 @@ public class Tintolmarket {
         }
     }
 
-    public static int wallet() {
-        return user.getWallet();
+    public static void wallet() throws IOException {
+        outToServer.writeObject("wallet");
     }
 
     public static void classify(String wine, int stars) throws Exception {

@@ -37,20 +37,43 @@ public class TintolmarketServer {
 	private ArrayList<User> userList;
 	private ArrayList<Wines> winesList;
 	private ArrayList<Wines> winesForSaleList;
-	
+	private File diretorio;
 
+	/**
+	 * @param port
+	 * @throws Exception
+	 */
+
+	@SuppressWarnings({"unchecked"})
 	public TintolmarketServer(int port) throws Exception {
 		this.port = port;
 		userList = new ArrayList<User>();
 		winesList = new ArrayList<Wines>();
 		winesForSaleList = new ArrayList<Wines>();
 
-		userList = (ArrayList<User>) readObjectFromFile(users);
-		winesList = (ArrayList<Wines>) readObjectFromFile(wines);
-		winesForSaleList = (ArrayList<Wines>) readObjectFromFile(winesforsale);
+		diretorio = new File("/images");
+				
 
+		br = new BufferedReader(new FileReader("users.txt"));
+		if(!(br.readLine() == null)){
+			userList = transformarEmUserUser((ArrayList<String>)readObjectFromFile(users));
+		}
+
+		br = new BufferedReader(new FileReader("wines.txt"));
+		if(!(br.readLine() == null)){
+			winesList = transformarEmWinesWines((ArrayList<String>)readObjectFromFile(wines));
+		}
+
+		br = new BufferedReader(new FileReader("winesforsale.txt"));
+		if(!(br.readLine() == null)){
+			winesForSaleList = transformarEmWinesWinesForSale((ArrayList<String>)readObjectFromFile(winesforsale));
+		}
 
 		/** 
+			userList = (ArrayList<User>) readObjectFromFile(users);
+			winesList = (ArrayList<Wines>) readObjectFromFile(wines);
+			winesForSaleList = (ArrayList<Wines>) readObjectFromFile(winesforsale); 
+		
 		br = new BufferedReader(new FileReader("users.txt"));
 		String st;
 		String split[] = new String[3];
@@ -83,6 +106,7 @@ public class TintolmarketServer {
 		TintolmarketServer server = new TintolmarketServer(Integer.parseInt(args[0]));// Lidar exeção para caso o porto
 																						// nao ser um Int!!!!
 		server.startServer(args);
+		
 	}
 
 	public void startServer(String[] args) {
@@ -148,20 +172,14 @@ public class TintolmarketServer {
 			socket = inSoc;
 			System.out.println("thread do server para cada cliente");
 		}
-
+		
 		public void run() {
 			try {
 				ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 				ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
 				DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 				DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-				File diretorio = new File("\\images");
 				
-				if(!diretorio.exists()) {
-					diretorio.mkdirs();
-				}else {
-					System.out.println("Diretorio ja existente");
-				}
 				
 				String user = null;
 				String passwd = null;
@@ -194,7 +212,8 @@ public class TintolmarketServer {
 
 					currentUser = new User(user, 200);
 					userList.add(currentUser);
-					writeObjectToFile(users, userList);
+
+					writeObjectToFile(users, transformarUser(userList));
 					outStream.writeObject("user criado");
 
 				} else if (userExists == true && correctPass == true) {
@@ -215,7 +234,7 @@ public class TintolmarketServer {
 				}
 
 				FileWriter fw= new FileWriter (userlog, true);
-				String s = user + " " + passwd;
+				String s = user + ":" + passwd;
 				writeFile(fw, s);
 
 				/** 
@@ -240,12 +259,7 @@ public class TintolmarketServer {
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				outStream.close();
-				inStream.close();
-				dataOutputStream.close();
-				dataInputStream.close();				
-				socket.close();
+				e.printStackTrace();					
 			}
 		}
 	}
@@ -283,24 +297,34 @@ public class TintolmarketServer {
 		} else if (str.equals("read")) {
 
 			readMessege(currentUser, outStream);
+
+		} else if (str.equals("wallet")){
+			wallet(currentUser, outStream);
 		}
 
+	}
+
+	private void wallet(User currentUser, ObjectOutputStream outStream) throws IOException {
+		outStream.writeObject("saldo: "+ currentUser.getWallet());
 	}
 
 	private void addWine(String wine, String image, ObjectOutputStream outStream, DataInputStream dataInputStream) throws Exception {
 		if (getWine(wine) == null) {
 			Wines newWine = new Wines(wine, "", 0, 0, image);
+			/** 
 			byte[] buffer = new byte[Integer.MAX_VALUE];
 		    int bytes = dataInputStream.read(buffer,0,buffer.length);
-		    FileOutputStream f = new FileOutputStream("images\\"+image);
+		    FileOutputStream f = new FileOutputStream("/images/"+image);
+			
 		    f.write(buffer,0,bytes);
+			*/
 			winesList.add(newWine);
 
 			/**FileWriter fw= new FileWriter (wines, true);
 			String s = wine + " " + image;
 			writeFile(fw, s);*/
 
-			writeObjectToFile(wines, winesList);
+			writeObjectToFile(wines, transformarWines(winesList));
 
 			// BufferedWriter bw= new BufferedWriter(fw);
 			// bw.write( wine + image);
@@ -333,11 +357,23 @@ public class TintolmarketServer {
 
 		} else {
 			wine.sell(quantity);
-			writeObjectToFile(winesforsale, winesForSaleList);
-			User seller = getUser(sellerID);
-			seller.Soldsomething(wine.getPrice());
-			currentUser.Boughtsomething(wine.getPrice());
-			// UpdateWinesForSale(1 , String wineID, int quantity);
+			writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
+			for (User i : userList) {
+				if (i.getUsername().equals(sellerID)) {
+					i.Soldsomething(wine.getPrice());
+					break;
+				}
+			}
+			
+
+			for (User i : userList) {
+				if (i.getUsername().equals(currentUser.getUsername())) {
+					i.Boughtsomething(wine.getPrice());
+					break;
+				}
+			}
+			
+			
 			outStream.writeObject("Compra bem sucedida");
 		}
 	}
@@ -349,7 +385,7 @@ public class TintolmarketServer {
 		} else {
 			Wines wine = getWine(wineID);
 			wine.classify(stars);
-			writeObjectToFile(winesforsale, winesForSaleList);
+			writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
 			outStream.writeObject("Obrigado pela sua avaliacao");
 		}
 	}
@@ -379,7 +415,7 @@ public class TintolmarketServer {
 			Wines newWine = new Wines(name, currentUser.getUsername(), value, quantity, null);
 			System.out.println(value + " , "+ newWine.getPrice());
 			winesForSaleList.add(newWine);
-			writeObjectToFile(winesforsale, winesForSaleList);
+			writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
 			outStream.writeObject("Vinho colocado a venda com sucesso");
 		}
 
@@ -415,11 +451,14 @@ public class TintolmarketServer {
 	private void viewWine(User currentUser, String wineID, ObjectOutputStream outStream, DataOutputStream dataOutputStream) throws Exception {
 		Wines wine = getWine(wineID);
 		Wines wine2 = getWineForSale(wineID);
-		outStream.writeObject("Vinho : "+wine2.getWinename()+ " vendido por: "+wine2.getUsername()+ " preço: "+wine2.getPrice()+" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine2.getClassify());
-	    byte[] buffer = new byte[Integer.MAX_VALUE];
-	    FileInputStream f = new FileInputStream("images\\ "+wine.getimage());
+		outStream.writeObject("Vinho : "+wine2.getWinename()+ " vendido por: "+wine2.getUsername()+ " preco: "+wine2.getPrice()+" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine2.getClassify());
+	    
+		/**byte[] buffer = new byte[Integer.MAX_VALUE];
+	    FileInputStream f = new FileInputStream("/images/"+wine.getimage());
+		
 	    int bytes = f.read(buffer,0,buffer.length);
 	    dataOutputStream.write(buffer,0,bytes);
+		*/
 	}
 
 	private void writeObjectToFile(File f, Object o) throws IOException{
@@ -429,6 +468,56 @@ public class TintolmarketServer {
 		oos.close();
 	}
 
+	private ArrayList<String> transformarUser(ArrayList<User> users){
+		ArrayList<String> ars = new ArrayList<>();
+		for (User u : users) {
+			ars.add(u.getUsername() + " " + u.getWallet());
+		}
+		return ars;
+	}
+
+	private ArrayList<User> transformarEmUserUser(ArrayList<String> data){
+		ArrayList<User> users = new ArrayList<>();
+		for (String s : data) {
+			String[] split = s.split(" ");
+			users.add(new User(split[0], Integer.parseInt(split[1])));
+		}
+		return users; 
+	}
+
+	private ArrayList<String> transformarWines(ArrayList<Wines> wines){
+		ArrayList<String> ars = new ArrayList<>();
+		for (Wines w : wines) {
+			ars.add(w.getWinename() +" "+ w.getimage());
+		}
+		return ars;
+	}
+
+	private ArrayList<Wines> transformarEmWinesWines(ArrayList<String> data){
+		ArrayList<Wines> wines = new ArrayList<>();
+		for (String s : data) {
+			String[] split = s.split(" ");
+			wines.add(new Wines(split[0],null,0,0, split[1]));
+		}
+		return wines;
+	}
+
+	private ArrayList<String> transformarWinesForSale(ArrayList<Wines> winesForSale){
+		ArrayList<String> ars = new ArrayList<>();
+		for (Wines w : winesForSale) {
+			ars.add(w.getWinename() +" "+w.getUsername()+" "+w.getPrice()+" "+w.getQuantity());
+		}
+		return ars;
+	}
+
+	private ArrayList<Wines> transformarEmWinesWinesForSale(ArrayList<String> data){
+		ArrayList<Wines> wines = new ArrayList<>();
+		for (String s : data) {
+			String[] split = s.split(" ");
+			wines.add(new Wines(split[0],split[1],Double.parseDouble(split[2]),Integer.parseInt(split[3]), null));
+		}
+		return wines;
+	}
 	private Object readObjectFromFile(File f) throws IOException, ClassNotFoundException{
 		FileInputStream fi = new FileInputStream(f);
 		ObjectInputStream oi = new ObjectInputStream(fi);

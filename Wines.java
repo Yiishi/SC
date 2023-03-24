@@ -4,7 +4,7 @@ public class Wines {
     private String username;
     private String winename;
     private double price;
-    private ArrayList<Integer> classification;
+    private ArrayList<Integer> classification = new ArrayList<Integer>();
     private int quantity;
     private String image;
 
@@ -34,15 +34,21 @@ public class Wines {
     public int getClassify(){
         int count = 0;
         int sum = 0;
-        for(int i : classification){
-            sum += i;
-            count++;
+
+        if(classification.size() != 0){
+            for(int i : classification){
+                sum += i;
+                count++;
+            }
+            return sum/count ;
         }
-        return sum/count ;
+        else
+            return 0;
+        
     }
 
     public String getimage(){
-        return image;
+        return image+".png";
     }
 
     public void sell(int i){
