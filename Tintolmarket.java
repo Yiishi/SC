@@ -15,7 +15,8 @@ public class Tintolmarket {
     private static Socket clientSocket;
     private static ObjectOutputStream outToServer;
     private static ObjectInputStream inFromServer;
-
+    private static DataInputStream dataInputStream;
+    private static DataOutputStream dataOutputStream;
     public static void main(String[] args) throws Exception {
         try {
             if (args.length == 3) {
@@ -64,6 +65,8 @@ public class Tintolmarket {
             outToServer.close();
             inFromServer.close();				
             clientSocket.close();
+            dataOutputStream.close();
+            dataInputStream.close();
         }
     }
 
@@ -75,7 +78,7 @@ public class Tintolmarket {
                 add(split[1], split[2]);
                 System.out.println((String) inFromServer.readObject());
                 byte[] buffer = new byte[Integer.MAX_VALUE];
-                FileInputStream f = new FileInputStream(image);
+                FileInputStream f = new FileInputStream(split[2]);
                 int bytes = f.read(buffer,0,buffer.length);
                 dataOutputStream.write(buffer,0,bytes);
             } else {
@@ -96,7 +99,7 @@ public class Tintolmarket {
                 System.out.println((String) inFromServer.readObject());
                 byte[] buffer = new byte[Integer.MAX_VALUE];
 		        int bytes = dataInputStream.read(buffer,0,buffer.length);
-		        FileOutputStream f = new FileOutputStream(split[1]_image);
+		        FileOutputStream f = new FileOutputStream(split[1]+"_image");
 		        f.write(buffer,0,bytes);
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");

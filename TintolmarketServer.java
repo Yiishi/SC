@@ -37,8 +37,7 @@ public class TintolmarketServer {
 	private ArrayList<User> userList;
 	private ArrayList<Wines> winesList;
 	private ArrayList<Wines> winesForSaleList;
-	private DataOutputStream dataOutputStream;
-	private DataInputStream dataInputStream;
+	
 
 	public TintolmarketServer(int port) throws Exception {
 		this.port = port;
@@ -154,9 +153,10 @@ public class TintolmarketServer {
 			try {
 				ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 				ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
-				dataOutputStream = new DataOutputStream(socket.getOutputStream());
-				dataInputStream = new DataInputStream(socket.getInputStream());
+				DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+				DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
 				File diretorio = new File("\\images");
+				
 				if(!diretorio.exists()) {
 					diretorio.mkdirs();
 				}else {
@@ -228,11 +228,13 @@ public class TintolmarketServer {
 				outStream.writeObject(currentUser.getWallet());
 				
 				while (!closed) {
-					avaluateRequest((String) inStream.readObject(), currentUser, outStream);
+					avaluateRequest((String) inStream.readObject(), currentUser, outStream, dataInputStream, dataOutputStream);
 				}
 
 				outStream.close();
-				inStream.close();				
+				inStream.close();
+				dataOutputStream.close();
+				dataInputStream.close();				
 				socket.close();
 
 			} catch (IOException | ClassNotFoundException e) {
@@ -240,20 +242,22 @@ public class TintolmarketServer {
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				outStream.close();
-				inStream.close();				
+				inStream.close();
+				dataOutputStream.close();
+				dataInputStream.close();				
 				socket.close();
 			}
 		}
 	}
 
-	public void avaluateRequest(String str, User currentUser, ObjectOutputStream outStream) throws Exception {
+	public void avaluateRequest(String str, User currentUser, ObjectOutputStream outStream, DataInputStream dataInputStream, DataOutputStream dataOutputStream) throws Exception {
 
 		String[] split = str.split(" ", 2);
 		String[] split2 = str.split(" ");
 
 		if (split[0].equals("add")) {
 
-			addWine(split2[1], split2[2], outStream);
+			addWine(split2[1], split2[2], outStream, dataInputStream);
 
 		} else if (split[0].equals("sell")) {
 
@@ -261,7 +265,7 @@ public class TintolmarketServer {
 
 		} else if (split[0].equals("view")) {
 
-			viewWine(currentUser, split2[1], outStream);
+			viewWine(currentUser, split2[1], outStream, dataOutputStream);
 
 		} else if (split[0].equals("buy")) {
 
@@ -283,7 +287,7 @@ public class TintolmarketServer {
 
 	}
 
-	private void addWine(String wine, String image, ObjectOutputStream outStream) throws Exception {
+	private void addWine(String wine, String image, ObjectOutputStream outStream, DataInputStream dataInputStream) throws Exception {
 		if (getWine(wine) == null) {
 			Wines newWine = new Wines(wine, "", 0, 0, image);
 			byte[] buffer = new byte[Integer.MAX_VALUE];
@@ -408,7 +412,7 @@ public class TintolmarketServer {
 		
 	}
 
-	private void viewWine(User currentUser, String wineID, ObjectOutputStream outStream) throws Exception {
+	private void viewWine(User currentUser, String wineID, ObjectOutputStream outStream, DataOutputStream dataOutputStream) throws Exception {
 		Wines wine = getWine(wineID);
 		Wines wine2 = getWineForSale(wineID);
 		outStream.writeObject("Vinho : "+wine2.getWinename()+ " vendido por: "+wine2.getUsername()+ " preço: "+wine2.getPrice()+" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine2.getClassify());
