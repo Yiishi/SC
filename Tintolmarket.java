@@ -83,13 +83,11 @@ public class Tintolmarket {
         if (split[0].equals("add") || split[0].equals("a")) {
             if (split.length == 3) {
                 add(split[1], split[2]);
-                System.out.println((String) inFromServer.readObject());
-                /** 
-                byte[] buffer = new byte[Integer.MAX_VALUE];
-                FileInputStream f = new FileInputStream(split[2]);
-                int bytes = f.read(buffer,0,buffer.length);
-                dataOutputStream.write(buffer,0,bytes);
-                */
+
+                System.out.println((String) inFromServer.readObject());    
+                enviaImagem(split[2]);
+                System.out.println((String) inFromServer.readObject()); 
+                
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");
             }
@@ -106,12 +104,7 @@ public class Tintolmarket {
             if (split.length == 2) {
                 view(split[1]);
                 System.out.println((String) inFromServer.readObject());
-                /** 
-                byte[] buffer = new byte[Integer.MAX_VALUE];
-		        int bytes = dataInputStream.read(buffer,0,buffer.length);
-		        FileOutputStream f = new FileOutputStream(split[1]+"_image");
-		        f.write(buffer,0,bytes);
-                */
+                
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");
             }
@@ -180,6 +173,7 @@ public class Tintolmarket {
     }
 
     public static void add(String wine, String image) throws Exception {
+         
         outToServer.writeObject("add " + wine + " " + image);
     }
 
@@ -192,7 +186,30 @@ public class Tintolmarket {
     }
 
     public static void view(String wine) throws Exception {
+        
         outToServer.writeObject("view " + wine);
+
     }
 
+    private static void enviaImagem (String image) throws IOException{
+        int i;
+        FileInputStream fis = new FileInputStream (image);
+
+        DataOutputStream os = new DataOutputStream(clientSocket.getOutputStream());
+        while ((i = fis.read()) > -1){
+            os.write(i);
+        }
+    }
+
+    private static void recebeImagem () throws IOException, ClassNotFoundException{
+
+        String image = (String) inFromServer.readObject();
+        FileOutputStream fout = new FileOutputStream(image);
+    
+        int i;
+        while ( (i = dataInputStream.read()) > -1) {
+            fout.write(i);
+        }
+
+    }
 }

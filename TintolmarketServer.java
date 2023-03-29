@@ -285,6 +285,7 @@ public class TintolmarketServer {
 
 		} else if (split[0].equals("view")) {
 
+
 			viewWine(currentUser, split2[1], outStream, dataOutputStream);
 
 		} else if (split[0].equals("buy")) {
@@ -317,26 +318,21 @@ public class TintolmarketServer {
 	private void addWine(String wine, String image, ObjectOutputStream outStream, DataInputStream dataInputStream) throws Exception {
 		if (getWine(wine) == null) {
 			Wines newWine = new Wines(wine, "", 0, 0, image);
-			/** 
-			byte[] buffer = new byte[Integer.MAX_VALUE];
-		    int bytes = dataInputStream.read(buffer,0,buffer.length);
-		    FileOutputStream f = new FileOutputStream("/images/"+image);
-			
-		    f.write(buffer,0,bytes);
-			*/
 			winesList.add(newWine);
+			
+			outStream.writeObject("O vinho foi adicionado ao catalogo");
 
-			/**FileWriter fw= new FileWriter (wines, true);
-			String s = wine + " " + image;
-			writeFile(fw, s);*/
+			FileOutputStream fout = new FileOutputStream("/images/"+image);
+			
+            int i;
+            while ( (i = dataInputStream.read()) > -1) {
+                fout.write(i);
+            }
 
 			writeObjectToFile(wines, transformarWines(winesList));
 
-			// BufferedWriter bw= new BufferedWriter(fw);
-			// bw.write( wine + image);
-			// bw.newLine();
-			// bw.close();
-			outStream.writeObject("O vinho foi adicionado ao catalogo");
+			outStream.writeObject("imagem adicionda com sucesso");
+			
 		} else {
 			outStream.writeObject("O vinho que deseja adicionar ja se encontra no catalogo");
 		}
@@ -457,14 +453,19 @@ public class TintolmarketServer {
 	private void viewWine(User currentUser, String wineID, ObjectOutputStream outStream, DataOutputStream dataOutputStream) throws Exception {
 		Wines wine = getWine(wineID);
 		Wines wine2 = getWineForSale(wineID);
+
+		int i;
+		String image = wine.getimage();
+		outStream.writeObject(image);
+        FileInputStream fis = new FileInputStream ("/images/"+image);
+
+            while ((i = fis.read()) > -1){
+                dataOutputStream.write(i);
+            } 
+
 		outStream.writeObject("Vinho : "+wine2.getWinename()+ " vendido por: "+wine2.getUsername()+ " preco: "+wine2.getPrice()+" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine2.getClassify());
 	    
-		/**byte[] buffer = new byte[Integer.MAX_VALUE];
-	    FileInputStream f = new FileInputStream("/images/"+wine.getimage());
 		
-	    int bytes = f.read(buffer,0,buffer.length);
-	    dataOutputStream.write(buffer,0,bytes);
-		*/
 	}
 
 	private void writeObjectToFile(File f, Object o) throws IOException{
