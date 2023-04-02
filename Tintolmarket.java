@@ -84,10 +84,39 @@ public class Tintolmarket {
             if (split.length == 3) {
                 add(split[1], split[2]);
 
-                System.out.println((String) inFromServer.readObject());    
-                enviaImagem(split[2], outToServer);
+                //System.out.println((String) inFromServer.readObject());    
+                //enviaImagem(split[2], outToServer);
+
+                int i;
+                File ifile = new File(split[2]);
+                if(ifile.exists()){
+                    System.out.println("ficheiro existe");
+                }
+                FileInputStream fis = new FileInputStream (split[2]);
+
+                System.out.println(ifile.length());
+                outToServer.writeLong(ifile.length());
+                long fileLength = ifile.length();
+                long acc = 0;
+                byte[] buffer = new byte[1024];
+
+                while (acc < fileLength){
+                    i = fis.read(buffer);
+
+                    if(i == -1){
+                        System.out.println("Erro ao enviar a imagem");
+						break;
+					}
+                    System.out.println(i);
+                    outToServer.write(buffer, 0, i);
+                    acc += i;
+                }
+
                 System.out.println((String) inFromServer.readObject()); 
                 
+                outToServer.flush();
+                fis.close();
+
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");
             }
@@ -199,10 +228,11 @@ public class Tintolmarket {
         }
         FileInputStream fis = new FileInputStream (image);
 
-
+        System.out.println(ifile.length());
         os.writeLong(ifile.length());
 
         while ((i = fis.read()) > -1){
+            System.out.println(i);
             os.write(i);
         }
     }
@@ -214,6 +244,7 @@ public class Tintolmarket {
     
         int i;
         while ( (i = dataInputStream.read()) > -1) {
+            
             fout.write(i);
         }
 

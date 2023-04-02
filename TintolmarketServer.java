@@ -289,7 +289,7 @@ public class TintolmarketServer {
 			Wines newWine = new Wines(wine, "", 0, 0, image);
 			winesList.add(newWine);
 			
-			outStream.writeObject("O vinho foi adicionado ao catalogo");
+			//outStream.writeObject("O vinho foi adicionado ao catalogo");
 
 			long fileSize = inStream.readLong();
 			System.out.println("aqui");
@@ -300,14 +300,17 @@ public class TintolmarketServer {
 				int bytesread = 0;
 				long bytesRecived = 0;
 
+				System.out.println("file size: " + fileSize);
 				while (bytesRecived < fileSize){
 					bytesread = inStream.read(buffer);
-					if (bytesread == -1) {
+					
+					if(bytesread == -1){
 						break;
 					}
 
 					fos.write(buffer, 0, bytesread);
 					bytesRecived += bytesread;
+					System.out.println(bytesRecived);
 				}
 
 				fos.flush();
