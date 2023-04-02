@@ -85,7 +85,7 @@ public class Tintolmarket {
                 add(split[1], split[2]);
 
                 System.out.println((String) inFromServer.readObject());    
-                enviaImagem(split[2]);
+                enviaImagem(split[2], outToServer);
                 System.out.println((String) inFromServer.readObject()); 
                 
             } else {
@@ -191,11 +191,17 @@ public class Tintolmarket {
 
     }
 
-    private static void enviaImagem (String image) throws IOException{
+    private static void enviaImagem (String image, ObjectOutputStream os) throws IOException{
         int i;
+        File ifile = new File(image);
+        if(ifile.exists()){
+            System.out.println("ficheiro existe");
+        }
         FileInputStream fis = new FileInputStream (image);
 
-        DataOutputStream os = new DataOutputStream(clientSocket.getOutputStream());
+
+        os.writeLong(ifile.length());
+
         while ((i = fis.read()) > -1){
             os.write(i);
         }
