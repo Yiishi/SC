@@ -198,6 +198,9 @@ public class TintolmarketServer {
 
 					writeObjectToFile(users, transformarUser(userList));
 					outStream.writeObject("user criado");
+					FileWriter fw= new FileWriter (userlog, true);
+					String s = user + ":" + passwd;
+					writeFile(fw, s);
 
 				} else if (userExists == true && correctPass == true) {
 
@@ -216,9 +219,7 @@ public class TintolmarketServer {
 					closed = true;
 				}
 
-				FileWriter fw= new FileWriter (userlog, true);
-				String s = user + ":" + passwd;
-				writeFile(fw, s);
+				
 
 				outStream.writeObject(currentUser.getUsername());
 				outStream.writeObject(currentUser.getWallet());
@@ -301,7 +302,7 @@ public class TintolmarketServer {
 				long bytesRecived = 0;
 
 				System.out.println("file size: " + fileSize);
-				while (bytesRecived < fileSize){
+				while (bytesRecived <= fileSize){
 					bytesread = inStream.read(buffer);
 					
 					if(bytesread == -1){
@@ -315,14 +316,17 @@ public class TintolmarketServer {
 
 				fos.flush();
 				fos.close();
+
+				writeObjectToFile(wines, transformarWines(winesList));
+
+				outStream.writeObject("Vinho adicionado com sucesso");
+
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			writeObjectToFile(wines, transformarWines(winesList));
-
-			outStream.writeObject("imagem adicionda com sucesso");
+			
 			
 		} else {
 			outStream.writeObject("O vinho que deseja adicionar ja se encontra no catalogo");

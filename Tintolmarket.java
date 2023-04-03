@@ -111,12 +111,12 @@ public class Tintolmarket {
                     outToServer.write(buffer, 0, i);
                     acc += i;
                 }
-
-                System.out.println((String) inFromServer.readObject()); 
-                
                 outToServer.flush();
                 fis.close();
 
+                System.out.println((String) inFromServer.readObject()); 
+                
+                
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");
             }
