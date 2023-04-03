@@ -295,7 +295,7 @@ public class TintolmarketServer {
 			long fileSize = inStream.readLong();
 			System.out.println("aqui");
 			try {
-				FileOutputStream fos = new FileOutputStream("/images/"+image);
+				FileOutputStream fos = new FileOutputStream("images/"+image);
 
 				byte[] buffer = new byte[1024];
 				int bytesread = 0;
