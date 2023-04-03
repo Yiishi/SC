@@ -294,7 +294,7 @@ public class TintolmarketServer {
 			long fileSize = inStream.readLong();
 			System.out.println("aqui");
 			try {
-				FileOutputStream fos = new FileOutputStream("/images/"+image);
+				FileOutputStream fos = new FileOutputStream("images/"+image);
 
 				byte[] buffer = new byte[1024];
 				int bytesread = 0;
@@ -315,15 +315,14 @@ public class TintolmarketServer {
 
 				fos.flush();
 				fos.close();
+				writeObjectToFile(wines, transformarWines(winesList));
+
+				outStream.writeObject("imagem adicionda com sucesso");
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			writeObjectToFile(wines, transformarWines(winesList));
-
-			outStream.writeObject("imagem adicionda com sucesso");
-			
 		} else {
 			outStream.writeObject("O vinho que deseja adicionar ja se encontra no catalogo");
 		}
