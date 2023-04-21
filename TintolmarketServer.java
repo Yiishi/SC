@@ -12,7 +12,8 @@
  */
 
 import java.io.IOException;
-
+import javax.crypto.*;
+import java.security.*;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.BufferedReader;
@@ -28,6 +29,7 @@ import java.io.FileWriter;
 import java.net.CacheRequest;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.KeyPairGenerator;
 import java.util.ArrayList;
 import java.util.stream.IntStream;
 
@@ -160,10 +162,26 @@ public class TintolmarketServer {
 		
 		public void run() {
 			try {
+				//private and public key initializing (i believe same has to be done on Client side, but not sure, for further investigation)
+				KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+				kpg.initialize(2048);
+				KeyPair kp= kpg.generateKeyPair();
+				PublicKey ku = kp.getPublic();
+				PrivateKey kr = kp.getPrivate();
+				Cipher c= Cipher.getInstance("RSA");
+				c.init(Cipher.ENCRYPT_MODE, kr);
+				
+				//cipher initializing to cipher everything, after that instead of using outstream cos.write on every method (i believe)
 				ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 				ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
-				
-				
+				CipherOutputStream cos= new CipherOutputStream(outStream,c);
+				/*
+				 * for decypher could be changing the instream and then the argument for evaluate request(last argument)
+				 * byte [] keyEnconded2 (what's read from the file)
+				 * SecretKeySpec keySpec = new SecretKeySpec(keyEncoded2, "RSA")
+				 * c.init(Cipher.DECRYPT_MODE, keySpec2)
+				 *(the encrypt has to be also done from client side for our decypher to actually work)
+				 */
 				String user = null;
 				String passwd = null;
 
