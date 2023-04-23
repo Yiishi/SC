@@ -42,10 +42,12 @@ public class TintolmarketServer {
 	File users = new File("users.txt");
 	File winesforsale = new File("winesforsale.txt");
 	File chat = new File("chat.txt");
+	File transactions = new File ("transactions");
 	private int port;
 	private ArrayList<User> userList;
 	private ArrayList<Wines> winesList;
 	private ArrayList<Wines> winesForSaleList;
+	private ArrayList<Transaction> transactionsList;
 	private File diretorio;
 
 	/**
@@ -59,6 +61,7 @@ public class TintolmarketServer {
 		userList = new ArrayList<User>();
 		winesList = new ArrayList<Wines>();
 		winesForSaleList = new ArrayList<Wines>();
+		transactionsList = new ArrayList<Transaction>();
 
 		diretorio = new File("/images");
 				
@@ -76,6 +79,11 @@ public class TintolmarketServer {
 		br = new BufferedReader(new FileReader("winesforsale.txt"));
 		if(!(br.readLine() == null)){
 			winesForSaleList = transformarEmWinesWinesForSale((ArrayList<String>)readObjectFromFile(winesforsale));
+		}
+		
+		br = new BufferedReader(new FileReader("transactions.txt"));
+		if(!(br.readLine() == null)){
+			transactionsList = (ArrayList<Transaction>)readObjectFromFile(transactions);
 		}
 
 	}
