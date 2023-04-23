@@ -7,9 +7,8 @@
 
 import java.io.*;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Scanner;
-import java.util.zip.Inflater;
+import javax.net.ssl.*;
 
 public class Tintolmarket {
     BufferedReader br;
@@ -24,9 +23,16 @@ public class Tintolmarket {
     private static ObjectInputStream inFromServer;
     private static DataInputStream dataInputStream;
     private static DataOutputStream dataOutputStream;
+    private static String truststore;
+    private static String keystore;
+    private static String passwordKeystore;
     public static void main(String[] args) throws Exception {
         try {
-            if (args.length == 3) {
+            if (args.length == 5) {
+
+                truststore = args[1];
+                keystore = args[2];
+                passwordKeystore = args[3];
 
                 String[] st = args[0].split(":");
 
@@ -36,14 +42,23 @@ public class Tintolmarket {
                     portNumber = 12345;
                 }
 
-                clientSocket = new Socket(st[0]/* hostname */, portNumber);
+                SSLSocketFactory sslSocketFactory =
+                    (SSLSocketFactory) SSLSocketFactory.getDefault();
+
+                SSLSocket clientSocket =
+                    (SSLSocket) sslSocketFactory.createSocket(st[0]/* hostname */, portNumber);
+
+                //clientSocket = new Socket(st[0]/* hostname */, portNumber);
                 outToServer = new ObjectOutputStream(clientSocket.getOutputStream());
                 inFromServer = new ObjectInputStream(clientSocket.getInputStream());
                 dataInputStream = new DataInputStream(clientSocket.getInputStream());
                 dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
 
-                outToServer.writeObject(args[1]);
-                outToServer.writeObject(args[2]);
+                outToServer.writeObject(args[4]);//user id sent to server
+                //outToServer.writeObject(args[2]); já n há password normal
+
+                Long nonce = (Long) inFromServer.readObject();
+                
                 Scanner ler = new Scanner(System.in);
 
                 System.out.println((String) inFromServer.readObject() + "\n");

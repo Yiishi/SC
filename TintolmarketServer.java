@@ -32,6 +32,8 @@ import java.net.Socket;
 import java.security.KeyPairGenerator;
 import java.util.ArrayList;
 import java.util.stream.IntStream;
+import javax.net.ssl.*;
+
 
 
 public class TintolmarketServer {
@@ -49,6 +51,9 @@ public class TintolmarketServer {
 	private ArrayList<Wines> winesForSaleList;
 	private ArrayList<Transaction> transactionsList;
 	private File diretorio;
+	private String passwordCifra;
+	private String keyStore;
+	private String passwordKeyStore;
 
 	/**
 	 * @param port
@@ -98,20 +103,33 @@ public class TintolmarketServer {
 			TintolmarketServer server = new TintolmarketServer(Integer.parseInt(args[0]));
 			server.startServer(args);
 		}
-
-		
-		
 		
 	}
 
 	public void startServer(String[] args) {
-		ServerSocket sSoc = null;
+		//ServerSocket sSoc = null;
+		SSLServerSocketFactory sslServerSocketFactory =
+                (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
+		SSLServerSocket sSoc = null;
+		
 		try {
-			if (args.length == 0) {
-				sSoc = new ServerSocket(12345);
+			if (args.length == 3) {
+
+				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(12345);
+
+				passwordCifra = args[0];
+				keyStore = args[1];
+				passwordKeyStore = args[2];
+
 			} else {
-				sSoc = new ServerSocket(Integer.parseInt(args[0]));
+
+				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(Integer.parseInt(args[0]));
+
+				passwordCifra = args[1];
+				keyStore = args[2];
+				passwordKeyStore = args[3];
+				
 			}
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
