@@ -48,10 +48,13 @@ public class TintolmarketServer {
 	private ArrayList<User> userList;
 	private ArrayList<Wines> winesList;
 	private ArrayList<Wines> winesForSaleList;
+	private ArrayList<Block> blockchain;
 	private File diretorio;
 	private String passwordCifra;
 	private String keyStore;
 	private String passwordKeyStore;
+	private int TransactionID=1;
+	private int blockID=1;
 
 	/**
 	 * @param port
@@ -64,6 +67,7 @@ public class TintolmarketServer {
 		userList = new ArrayList<User>();
 		winesList = new ArrayList<Wines>();
 		winesForSaleList = new ArrayList<Wines>();
+		blockchain= new ArrayList<Block>();
 
 		diretorio = new File("/images");
 				
@@ -436,7 +440,25 @@ public class TintolmarketServer {
 					break;
 				}
 			}
-			
+			int index = blockchain.size();
+			if(index!=0 && blockchain.get(index-1).getTransactionsLength()<5) {
+				blockchain.get(index-1).addTransaction(new Transaction(TransactionID, "buy", currentUser.getUsername(), wine.getPrice()));
+				TransactionID++;
+			}else {
+				if(blockID!=1) {
+					Block newblock=new Block(Integer.toString(blockID), blockchain.get(index-1).calculateBlockHash());
+					newblock.addTransaction(new Transaction(TransactionID, "buy",currentUser.getUsername(), wine.getPrice()));
+					blockchain.add(newblock);
+					TransactionID++;
+					blockID++;
+				}else {
+					Block newblock = new Block(Integer.toString(blockID));
+					newblock.addTransaction(new Transaction(TransactionID, "buy",currentUser.getUsername(), wine.getPrice()));
+					blockchain.add(newblock);
+					TransactionID++;
+					blockID++;
+				}
+			}
 			
 			outStream.writeObject("Compra bem sucedida");
 		}
@@ -487,9 +509,27 @@ public class TintolmarketServer {
 			System.out.println(value + " , "+ newWine.getPrice());
 			winesForSaleList.add(newWine);
 			writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
-			outStream.writeObject("Vinho colocado a venda com sucesso");
+			int index = blockchain.size();
+			if(index!=0 && blockchain.get(index-1).getTransactionsLength()<5) {
+				blockchain.get(index-1).addTransaction(new Transaction(TransactionID, "buy", currentUser.getUsername(), newWine.getPrice()));
+				TransactionID++;
+			}else {
+				if(blockID!=1) {
+					Block newblock=new Block(Integer.toString(blockID), blockchain.get(index-1).calculateBlockHash());
+					newblock.addTransaction(new Transaction(TransactionID, "buy",currentUser.getUsername(), newWine.getPrice()));
+					blockchain.add(newblock);
+					TransactionID++;
+					blockID++;
+				}else {
+					Block newblock = new Block(Integer.toString(blockID));
+					newblock.addTransaction(new Transaction(TransactionID, "buy",currentUser.getUsername(), newWine.getPrice()));
+					blockchain.add(newblock);
+					TransactionID++;
+					blockID++;
+				}
+			outStream.writeObject("Vinho colocado a venda com sucesso");	
+			}
 		}
-
 	}
 
 	private void talk(String user, String message, User currentUser, ObjectOutputStream outStream) throws Exception {
