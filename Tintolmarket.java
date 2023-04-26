@@ -7,6 +7,8 @@
 
 import java.io.*;
 import java.net.Socket;
+import java.security.*;
+import java.security.cert.Certificate;
 import java.util.Scanner;
 import javax.net.ssl.*;
 
@@ -16,24 +18,35 @@ public class Tintolmarket {
     File users = new File("userLog.txt");
     File winesforsale = new File("winesforsale.txt");
     static User user;
-    private static String hostName;
     private static int portNumber;
     private static Socket clientSocket;
     private static ObjectOutputStream outToServer;
     private static ObjectInputStream inFromServer;
     private static DataInputStream dataInputStream;
     private static DataOutputStream dataOutputStream;
-    private static String truststore;
-    private static String keystore;
+    private static KeyStore trustStore;
+    private static KeyStore keystore;
+    private static Key privateKey;
     private static String passwordKeystore;
     public static void main(String[] args) throws Exception {
         try {
             if (args.length == 5) {
 
-                truststore = args[1];
-                keystore = args[2];
+                String truststoreS = args[1];
+                String keystoreS = args[2];
                 passwordKeystore = args[3];
 
+                FileInputStream Tfile = new FileInputStream(truststoreS);
+                trustStore = KeyStore.getInstance("JCEKS");
+                trustStore.load(Tfile, passwordKeystore.toCharArray());
+
+                FileInputStream kfile = new FileInputStream(keystoreS);
+                keystore = KeyStore.getInstance("JCEKS");
+                keystore.load(kfile, passwordKeystore.toCharArray());
+                privateKey = keystore.getKey("keyRSA", passwordKeystore.toCharArray());
+                Certificate cert = (Certificate) keystore.getCertificate("keyRSA");
+                PublicKey pk = cert.getPublicKey( );
+                
                 String[] st = args[0].split(":");
 
                 if (st.length == 2) {
@@ -58,32 +71,63 @@ public class Tintolmarket {
                 //outToServer.writeObject(args[2]); já n há password normal
 
                 Long nonce = (Long) inFromServer.readObject();
-                
+                String flag = (String) inFromServer.readObject();
+                Key myPrivateKey = keystore.getKey("keyRSA", "123456".toCharArray());
+                //codificar o nonce com a private key
+                String encrypted = "";
+                if (flag.equals("202 ACCEPTED")) {
+                    outToServer.writeObject(encrypted);
+                    
+                }else if(flag.equals("404 NOT FOUND")){
+                    outToServer.writeObject(nonce);
+                    outToServer.writeObject(encrypted);
+                    outToServer.writeObject(pk);
+                }
+
                 Scanner ler = new Scanner(System.in);
 
-                System.out.println((String) inFromServer.readObject() + "\n");
+                
+                if(inFromServer.readObject().equals("fechar")){
 
-                String userId = (String) inFromServer.readObject();
-                int wallet = (int) inFromServer.readObject();
-                user = new User(userId, wallet);
+                }else{
+                    System.out.println((String) inFromServer.readObject() + "\n");
+                    String userId = (String) inFromServer.readObject();
+                    int wallet = (int) inFromServer.readObject();
+                    user = new User(userId, wallet, pk);
 
-                while (1 == 1) {
-                    System.out.println("\nMenu");
-                    System.out.println("Adicionar um vinho ao catalogo : add wineName image");
-                    System.out.println("Colocar um vinho do catalogo a venda: sell wineName value quantity");
-                    System.out.println("Ver um vinho: view wineName");
-                    System.out.println("Comprar vinho: buy wineName seller quantity");
-                    System.out.println("Verificar carteira: wallet");
-                    System.out.println("Classificar vinho: classify wineName stars");
-                    System.out.println("Enviar mensagem: talk user message");
-                    System.out.println("Ler mensagens: read \n");
+                    
 
-                    String acao = ler.nextLine();
-                    avaliaAcao(acao);
+                    boolean quit = false;
+                    while (quit == false) {
+                        System.out.println("\nMenu");
+                        System.out.println("Adicionar um vinho ao catalogo : add wineName image");
+                        System.out.println("Colocar um vinho do catalogo a venda: sell wineName value quantity");
+                        System.out.println("Ver um vinho: view wineName");
+                        System.out.println("Comprar vinho: buy wineName seller quantity");
+                        System.out.println("Verificar carteira: wallet");
+                        System.out.println("Classificar vinho: classify wineName stars");
+                        System.out.println("Enviar mensagem: talk user message");
+                        System.out.println("Ler mensagens: read");
+                        System.out.println("Fechar: quit\n");
+
+                        String acao = ler.nextLine();
+                        if(acao.equals("quit")){
+                            outToServer.writeObject("quit");
+                            quit = true;
+                        }else{
+                            avaliaAcao(acao);
+                        }
+                    }
                 }
+                ler.close();
+                outToServer.close();
+                inFromServer.close();				
+                clientSocket.close();
+                dataOutputStream.close();
+                dataInputStream.close();
             }
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            outToServer.writeObject("quit");
             outToServer.close();
             inFromServer.close();				
             clientSocket.close();
@@ -179,18 +223,31 @@ public class Tintolmarket {
 
         } else if (split[0].equals("talk") || split[0].equals("t")) {
             StringBuilder msg = new StringBuilder();
+
+            
             for (int i = 2; i < split.length; i++) {
                 msg.append(split[i]);
                 msg.append(" ");
             }
-            
-            talk(split[1], msg.toString());
+            Certificate cert2 = (Certificate) trustStore.getCertificate(split[1]);
+            PublicKey pk = cert2.getPublicKey( );
+            byte[] b = Crypt.Encrypt(pk, msg);
+            talk(split[1], b);
             System.out.println((String) inFromServer.readObject());
 
         } else if (split[0].equals("read") || split[0].equals("r")) {
             if (split.length == 1) {
                 read();
-                System.out.println((String) inFromServer.readObject());
+                boolean close = false;
+                while (close == false) {
+                    byte[] msg = (byte[]) inFromServer.readObject();
+                    String msg2 = (String) inFromServer.readObject();
+                    System.out.println(Crypt.Decrypt(privateKey, msg));
+                    System.out.println(msg2);
+                    if ((boolean) inFromServer.readObject() == true) {
+                        close = true;  
+                    }   
+                }
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");
             }
@@ -207,9 +264,9 @@ public class Tintolmarket {
         outToServer.writeObject("classify " + wine + " " + stars);
     }
 
-    public static void talk(String user, String message) throws Exception {
+    public static void talk(String user, byte[] b) throws Exception {
         System.out.println("talk");
-        outToServer.writeObject("talk/" + user + "/" + message);
+        outToServer.writeObject("talk/" + user + "/" + b);
     }
 
     public static void read() throws Exception {
@@ -232,36 +289,6 @@ public class Tintolmarket {
     public static void view(String wine) throws Exception {
         
         outToServer.writeObject("view " + wine);
-
-    }
-
-    private static void enviaImagem (String image, ObjectOutputStream os) throws IOException{
-        int i;
-        File ifile = new File(image);
-        if(ifile.exists()){
-            System.out.println("ficheiro existe");
-        }
-        FileInputStream fis = new FileInputStream (image);
-
-        System.out.println(ifile.length());
-        os.writeLong(ifile.length());
-
-        while ((i = fis.read()) > -1){
-            System.out.println(i);
-            os.write(i);
-        }
-    }
-
-    private static void recebeImagem () throws IOException, ClassNotFoundException{
-
-        String image = (String) inFromServer.readObject();
-        FileOutputStream fout = new FileOutputStream(image);
-    
-        int i;
-        while ( (i = dataInputStream.read()) > -1) {
-            
-            fout.write(i);
-        }
 
     }
 }
