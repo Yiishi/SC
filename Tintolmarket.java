@@ -28,6 +28,7 @@ public class Tintolmarket {
     private static KeyStore keystore;
     private static Key privateKey;
     private static String passwordKeystore;
+    
     public static void main(String[] args) throws Exception {
         try {
             if (args.length == 5) {
