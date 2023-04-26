@@ -14,11 +14,12 @@ public class Wines {
     private int quantity;
     private String image;
 
-    public Wines(String winename ,String username , double price , int quantity , String image ){
+    public Wines(String winename ,String username , double price , int quantity , String image){
     	this.winename = winename;
         this.username = username;
         this.price = price;
         this.quantity =  quantity;
+        this.image = image;
     }
 
     public String getUsername(){
@@ -54,7 +55,7 @@ public class Wines {
     }
 
     public String getimage(){
-        return image+".png";
+        return image;
     }
 
     public void sell(int i){

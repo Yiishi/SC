@@ -7,8 +7,9 @@
 
 import java.io.*;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Scanner;
-import javax.net.ssl.*;
+import java.util.zip.Inflater;
 
 public class Tintolmarket {
     BufferedReader br;
@@ -23,16 +24,9 @@ public class Tintolmarket {
     private static ObjectInputStream inFromServer;
     private static DataInputStream dataInputStream;
     private static DataOutputStream dataOutputStream;
-    private static String truststore;
-    private static String keystore;
-    private static String passwordKeystore;
     public static void main(String[] args) throws Exception {
         try {
-            if (args.length == 5) {
-
-                truststore = args[1];
-                keystore = args[2];
-                passwordKeystore = args[3];
+            if (args.length == 3) {
 
                 String[] st = args[0].split(":");
 
@@ -42,23 +36,14 @@ public class Tintolmarket {
                     portNumber = 12345;
                 }
 
-                SSLSocketFactory sslSocketFactory =
-                    (SSLSocketFactory) SSLSocketFactory.getDefault();
-
-                SSLSocket clientSocket =
-                    (SSLSocket) sslSocketFactory.createSocket(st[0]/* hostname */, portNumber);
-
-                //clientSocket = new Socket(st[0]/* hostname */, portNumber);
+                clientSocket = new Socket(st[0]/* hostname */, portNumber);
                 outToServer = new ObjectOutputStream(clientSocket.getOutputStream());
                 inFromServer = new ObjectInputStream(clientSocket.getInputStream());
                 dataInputStream = new DataInputStream(clientSocket.getInputStream());
                 dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
 
-                outToServer.writeObject(args[4]);//user id sent to server
-                //outToServer.writeObject(args[2]); já n há password normal
-
-                Long nonce = (Long) inFromServer.readObject();
-                
+                outToServer.writeObject(args[1]);
+                outToServer.writeObject(args[2]);
                 Scanner ler = new Scanner(System.in);
 
                 System.out.println((String) inFromServer.readObject() + "\n");
@@ -98,40 +83,44 @@ public class Tintolmarket {
         if (split[0].equals("add") || split[0].equals("a")) {
             if (split.length == 3) {
                 add(split[1], split[2]);
+                if((Boolean) inFromServer.readObject() == false){
 
-                //System.out.println((String) inFromServer.readObject());    
-                //enviaImagem(split[2], outToServer);
-
-                int i;
-                File ifile = new File(split[2]);
-                if(ifile.exists()){
-                    System.out.println("ficheiro existe");
+                    System.out.println("aqui");
+    
+                    int i;
+                    File ifile = new File(split[2]);
+                    if(ifile.exists()){
+                        System.out.println("ficheiro existe");
+                    }
+                    FileInputStream fis = new FileInputStream (split[2]);
+    
+                    System.out.println(ifile.length());
+                    outToServer.writeLong(ifile.length());
+                    long fileLength = ifile.length();
+                    long acc = 0;
+                    byte[] buffer = new byte[1024];
+    
+                    while (acc < fileLength){
+                        i = fis.read(buffer);
+    
+                        if(i == -1){
+                            System.out.println("Erro ao enviar a imagem");
+                            break;
+                        }
+                        System.out.println(i);
+                        outToServer.write(buffer, 0, i);
+                        acc += i;}
+                    
+                    fis.close();
                 }
-                FileInputStream fis = new FileInputStream (split[2]);
 
-                System.out.println(ifile.length());
-                outToServer.writeLong(ifile.length());
-                long fileLength = ifile.length();
-                long acc = 0;
-                byte[] buffer = new byte[1024];
-
-                while (acc < fileLength){
-                    i = fis.read(buffer);
-
-                    if(i == -1){
-                        System.out.println("Erro ao enviar a imagem");
-						break;
-					}
-                    System.out.println(i);
-                    outToServer.write(buffer, 0, i);
-                    acc += i;
-                }
                 outToServer.flush();
-                fis.close();
-
+                
+                
                 System.out.println((String) inFromServer.readObject()); 
                 
                 
+
             } else {
                 System.out.println("Por favor preencha todos os requisitos corretamente");
             }
@@ -232,6 +221,40 @@ public class Tintolmarket {
     public static void view(String wine) throws Exception {
         
         outToServer.writeObject("view " + wine);
+
+        String image =(String) inFromServer.readObject();
+
+        long fileSize = inFromServer.readLong();
+
+        System.out.println("aqui");
+
+        try {
+            FileOutputStream fos = new FileOutputStream("images/"+image);
+
+            byte[] buffer = new byte[1024];
+            int bytesread = 0;
+            long bytesRecived = 0;
+
+            System.out.println("file size: " + fileSize);
+            while (bytesRecived < fileSize){
+                bytesread = inFromServer.read(buffer);
+                
+                if(bytesread == -1){
+                    break;
+                }
+
+                fos.write(buffer, 0, bytesread);
+                bytesRecived += bytesread;
+                System.out.println(bytesRecived);
+            }
+
+            fos.flush();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 

@@ -12,8 +12,7 @@
  */
 
 import java.io.IOException;
-import javax.crypto.*;
-import java.security.*;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.BufferedReader;
@@ -29,11 +28,8 @@ import java.io.FileWriter;
 import java.net.CacheRequest;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.KeyPairGenerator;
 import java.util.ArrayList;
 import java.util.stream.IntStream;
-import javax.net.ssl.*;
-
 
 
 public class TintolmarketServer {
@@ -44,16 +40,11 @@ public class TintolmarketServer {
 	File users = new File("users.txt");
 	File winesforsale = new File("winesforsale.txt");
 	File chat = new File("chat.txt");
-	File transactions = new File ("transactions");
 	private int port;
 	private ArrayList<User> userList;
 	private ArrayList<Wines> winesList;
 	private ArrayList<Wines> winesForSaleList;
-	private ArrayList<Transaction> transactionsList;
 	private File diretorio;
-	private String passwordCifra;
-	private String keyStore;
-	private String passwordKeyStore;
 
 	/**
 	 * @param port
@@ -66,7 +57,6 @@ public class TintolmarketServer {
 		userList = new ArrayList<User>();
 		winesList = new ArrayList<Wines>();
 		winesForSaleList = new ArrayList<Wines>();
-		transactionsList = new ArrayList<Transaction>();
 
 		diretorio = new File("/images");
 				
@@ -85,11 +75,6 @@ public class TintolmarketServer {
 		if(!(br.readLine() == null)){
 			winesForSaleList = transformarEmWinesWinesForSale((ArrayList<String>)readObjectFromFile(winesforsale));
 		}
-		
-		br = new BufferedReader(new FileReader("transactions.txt"));
-		if(!(br.readLine() == null)){
-			transactionsList = (ArrayList<Transaction>)readObjectFromFile(transactions);
-		}
 
 	}
 
@@ -103,33 +88,20 @@ public class TintolmarketServer {
 			TintolmarketServer server = new TintolmarketServer(Integer.parseInt(args[0]));
 			server.startServer(args);
 		}
+
+		
+		
 		
 	}
 
 	public void startServer(String[] args) {
-		//ServerSocket sSoc = null;
-		SSLServerSocketFactory sslServerSocketFactory =
-                (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+		ServerSocket sSoc = null;
 
-		SSLServerSocket sSoc = null;
-		
 		try {
-			if (args.length == 3) {
-
-				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(12345);
-
-				passwordCifra = args[0];
-				keyStore = args[1];
-				passwordKeyStore = args[2];
-
+			if (args.length == 0) {
+				sSoc = new ServerSocket(12345);
 			} else {
-
-				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(Integer.parseInt(args[0]));
-
-				passwordCifra = args[1];
-				keyStore = args[2];
-				passwordKeyStore = args[3];
-				
+				sSoc = new ServerSocket(Integer.parseInt(args[0]));
 			}
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
@@ -188,26 +160,10 @@ public class TintolmarketServer {
 		
 		public void run() {
 			try {
-				//private and public key initializing (i believe same has to be done on Client side, but not sure, for further investigation)
-				KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-				kpg.initialize(2048);
-				KeyPair kp= kpg.generateKeyPair();
-				PublicKey ku = kp.getPublic();
-				PrivateKey kr = kp.getPrivate();
-				Cipher c= Cipher.getInstance("RSA");
-				c.init(Cipher.ENCRYPT_MODE, kr);
-				
-				//cipher initializing to cipher everything, after that instead of using outstream cos.write on every method (i believe)
 				ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 				ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
-				CipherOutputStream cos= new CipherOutputStream(outStream,c);
-				/*
-				 * for decypher could be changing the instream and then the argument for evaluate request(last argument)
-				 * byte [] keyEnconded2 (what's read from the file)
-				 * SecretKeySpec keySpec = new SecretKeySpec(keyEncoded2, "RSA")
-				 * c.init(Cipher.DECRYPT_MODE, keySpec2)
-				 *(the encrypt has to be also done from client side for our decypher to actually work)
-				 */
+				
+				
 				String user = null;
 				String passwd = null;
 
@@ -242,9 +198,6 @@ public class TintolmarketServer {
 
 					writeObjectToFile(users, transformarUser(userList));
 					outStream.writeObject("user criado");
-					FileWriter fw= new FileWriter (userlog, true);
-					String s = user + ":" + passwd;
-					writeFile(fw, s);
 
 				} else if (userExists == true && correctPass == true) {
 
@@ -263,7 +216,9 @@ public class TintolmarketServer {
 					closed = true;
 				}
 
-				
+				FileWriter fw= new FileWriter (userlog, true);
+				String s = user + ":" + passwd;
+				writeFile(fw, s);
 
 				outStream.writeObject(currentUser.getUsername());
 				outStream.writeObject(currentUser.getWallet());
@@ -331,7 +286,13 @@ public class TintolmarketServer {
 
 	private void addWine(String wine, String image, ObjectOutputStream outStream, ObjectInputStream inStream) throws Exception {
 		if (getWine(wine) == null) {
+
+			boolean b = false;
+			outStream.writeObject(b);
+
+			System.out.println("nome da imagem: "+image);
 			Wines newWine = new Wines(wine, "", 0, 0, image);
+			System.out.println(newWine.getimage());
 			winesList.add(newWine);
 			
 			//outStream.writeObject("O vinho foi adicionado ao catalogo");
@@ -346,7 +307,7 @@ public class TintolmarketServer {
 				long bytesRecived = 0;
 
 				System.out.println("file size: " + fileSize);
-				while (bytesRecived <= fileSize){
+				while (bytesRecived < fileSize){
 					bytesread = inStream.read(buffer);
 					
 					if(bytesread == -1){
@@ -360,19 +321,17 @@ public class TintolmarketServer {
 
 				fos.flush();
 				fos.close();
-
 				writeObjectToFile(wines, transformarWines(winesList));
 
-				outStream.writeObject("Vinho adicionado com sucesso");
-
+				outStream.writeObject("imagem adicionda com sucesso");
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
-			
 		} else {
+			boolean b = true;
+			outStream.writeObject(b);
 			outStream.writeObject("O vinho que deseja adicionar ja se encontra no catalogo");
 		}
 	}
@@ -491,18 +450,49 @@ public class TintolmarketServer {
 
 	private void viewWine(User currentUser, String wineID, ObjectOutputStream outStream) throws Exception {
 		Wines wine = getWine(wineID);
+		System.out.println(wine.getWinename());
 		Wines wine2 = getWineForSale(wineID);
 
-		int i;
 		String image = wine.getimage();
+		System.out.println("nome da imagem no view:"+image);
+
 		outStream.writeObject(image);
-        FileInputStream fis = new FileInputStream ("/images/"+image);
+		
 
-            while ((i = fis.read()) > -1){
-                outStream.write(i);
-            } 
+		int i;
+		File ifile = new File("images/"+image);
+		if(ifile.exists()){
+			System.out.println("ficheiro existe");
+		}
+        FileInputStream fis = new FileInputStream (ifile);
 
-		outStream.writeObject("Vinho : "+wine2.getWinename()+ " vendido por: "+wine2.getUsername()+ " preco: "+wine2.getPrice()+" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine2.getClassify());
+		System.out.println(ifile.length());
+		outStream.writeLong(ifile.length());
+		long fileLength = ifile.length();
+		long acc = 0;
+		byte[] buffer = new byte[1024];
+
+		while (acc < fileLength){
+			i = fis.read(buffer);
+
+			if(i == -1){
+				System.out.println("Erro ao enviar a imagem");
+				break;
+			}
+			System.out.println(i);
+			outStream.write(buffer, 0, i);
+			acc += i;}
+		
+		fis.close();
+
+		if(wine2 == null){
+			outStream.writeObject("Vinho : "+wine.getWinename()+ "Classificacao media : "+wine.getClassify()+ 
+								  "Imagem : "+wine.getimage());
+		}else{
+			outStream.writeObject("Vinho : "+wine2.getWinename()+ " vendido por: "+wine2.getUsername()+ " preco: "+wine2.getPrice()
+		                         +" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine2.getClassify());
+		}
+		
 	    
 		
 	}
@@ -535,6 +525,7 @@ public class TintolmarketServer {
 		ArrayList<String> ars = new ArrayList<>();
 		for (Wines w : wines) {
 			ars.add(w.getWinename() +" "+ w.getimage());
+			System.out.println(w.getimage());
 		}
 		return ars;
 	}
@@ -544,6 +535,7 @@ public class TintolmarketServer {
 		for (String s : data) {
 			String[] split = s.split(" ");
 			wines.add(new Wines(split[0],null,0,0, split[1]));
+			System.out.println(split[1]);
 		}
 		return wines;
 	}
