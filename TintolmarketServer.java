@@ -12,24 +12,27 @@
  */
 
 import java.io.IOException;
-
+import java.security.cert.Certificate;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.net.CacheRequest;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.stream.IntStream;
+import java.util.Random;
+
+import javax.net.ssl.*;
+import javax.print.attribute.standard.NumberOfInterveningJobs;
+
 
 
 public class TintolmarketServer {
@@ -160,71 +163,124 @@ public class TintolmarketServer {
 		
 		public void run() {
 			try {
+				//private and public key initializing (i believe same has to be done on Client side, but not sure, for further investigation)
+				// KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+				// kpg.initialize(2048);
+				// KeyPair kp= kpg.generateKeyPair();
+				// PublicKey ku = kp.getPublic();
+				// PrivateKey kr = kp.getPrivate();
+				// Cipher c = Cipher.getInstance("RSA");
+				// c.init(Cipher.ENCRYPT_MODE, kr);
+				
+				//cipher initializing to cipher everything, after that instead of using outstream cos.write on every method (i believe)
 				ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 				ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
-				
-				
+				// CipherOutputStream cos= new CipherOutputStream(outStream,c);
+				/*
+				 * for decypher could be changing the instream and then the argument for evaluate request(last argument)
+				 * byte [] keyEnconded2 (what's read from the file)
+				 * SecretKeySpec keySpec = new SecretKeySpec(keyEncoded2, "RSA")
+				 * c.init(Cipher.DECRYPT_MODE, keySpec2)
+				 *(the encrypt has to be also done from client side for our decypher to actually work)
+				 */
 				String user = null;
-				String passwd = null;
+
 
 				try {
 
 					user = (String) inStream.readObject();
-					passwd = (String) inStream.readObject();
+					
+					// passwd = (String) inStream.readObject();
 					System.out.println("thread: depois de receber a password e o user");
 				} catch (ClassNotFoundException e1) {
 					e1.printStackTrace();
 				}
 
 				User currentUser = null;
+				FileInputStream kfile = new FileInputStream(keyStore); //keystore
+				KeyStore kstore = KeyStore.getInstance("JCEKS");
+				kstore.load(kfile, passwordKeyStore.toCharArray());
+				Key myPrivateKey = kstore.getKey("keyRSA", passwordKeyStore.toCharArray());
+				FileOutputStream fos = new FileOutputStream("userLog.txt");
+				FileInputStream fis = new FileInputStream("EncryptedUserLog.txt");
+				Crypt.DecryptFile(myPrivateKey, outStream, fis, fos);
+				fis.close();
+				fos.close();
 				BufferedReader br = new BufferedReader(new FileReader(new File("userLog.txt")));
-				boolean correctPass = false;
 				boolean userExists = false;
-				boolean closed = false;
+
 
 				for (String x = br.readLine(); x != null; x = br.readLine()) {
-					String[] s = x.split(":");
-					if (s[0].equals(user) && s[1].equals(passwd)) {
+					if (x.equals(user)) {
 						userExists = true;
-						correctPass = true;
 						break;
 					}
 				}
 
+				long nonse;
+				Random rd = new Random();
+				nonse = rd.nextLong();
+				outStream.writeObject(nonse);
 				if (userExists == false) {
+					
+					outStream.writeObject("404 NOT FOUND");
 
-					currentUser = new User(user, 200);
+					Long received_nonse = (Long) inStream.readObject();
+					String encrypted = (String) inStream.readObject();
+					PublicKey key = (PublicKey) inStream.readObject();
+					Long desencrypted = Long.parseLong(Crypt.Decrypt(key, encrypted.getBytes()));
+
+					if(received_nonse != nonse || desencrypted != nonse){
+						outStream.writeObject("fechar");
+					}else{
+						outStream.writeObject("nao fechar");
+					}
+
+					currentUser = new User(user, 200, key);
 					userList.add(currentUser);
 
 					writeObjectToFile(users, transformarUser(userList));
-					outStream.writeObject("user criado");
+					outStream.writeObject("Registado");
+					FileWriter fw= new FileWriter (userlog, true);
+					String s = user;
+					writeFile(fw, s);
 
-				} else if (userExists == true && correctPass == true) {
-
+				} else{
+					outStream.writeObject("202 ACCEPTED");
+					String encrypted = (String) inStream.readObject();
 					for (User u : userList) {
 						if (u.getUsername().equals(user)) {
 							currentUser = u;
 							break;
 						}
 					}
-					outStream.writeObject("autenticado");
-				
-				
-
-				} else {
-					outStream.writeObject("password incorreta");
-					closed = true;
+					Long desencrypted = Long.parseLong(Crypt.Decrypt(currentUser.getPk(), encrypted.getBytes()));
+					if(desencrypted == nonse){
+						outStream.writeObject("nao fechar");
+						outStream.writeObject("autenticado");
+					}else{
+						outStream.writeObject("fechar");
+					}
 				}
 
-				FileWriter fw= new FileWriter (userlog, true);
-				String s = user + ":" + passwd;
-				writeFile(fw, s);
-
+				FileOutputStream fos2 = new FileOutputStream("EncryptedUserLog.txt");
+				FileInputStream fis2 = new FileInputStream("userLog.txt");
+				Certificate cert = (Certificate) kstore.getCertificate("keyRSA");
+				PublicKey pk = cert.getPublicKey( ); 
+				Crypt.EncryptFile(pk, outStream, fis2, fos2);
+				fis2.close();
+				fos2.close();
 				outStream.writeObject(currentUser.getUsername());
 				outStream.writeObject(currentUser.getWallet());
-				
-				while (!closed) {
-					avaluateRequest((String) inStream.readObject(), currentUser, outStream, inStream);
+
+				boolean quit = false;
+				while (quit == false) {
+					String acao = (String) inStream.readObject();
+					if(acao.equals("quit")){
+						quit = true;
+					}else{
+						avaluateRequest(acao, currentUser, outStream, inStream);
+					}
 				}
 
 				outStream.close();
@@ -392,19 +448,26 @@ public class TintolmarketServer {
 
 	private void readMessege(User currentUser, ObjectOutputStream outStream) throws Exception {
 		br = new BufferedReader(new FileReader("chat.txt"));
-		boolean noMSG = true;
+		// boolean noMSG = true;
 		String st9;
 		String split9[] = new String[3];
 		StringBuilder msg = new StringBuilder();
+		StringBuilder msg2 = new StringBuilder();
+		boolean close = false;
 		while ((st9 = br.readLine()) != null) {
 			split9 = st9.split("/");
 			if (split9[0].equals(currentUser.getUsername())) {
-				msg.append(split9[1]).append("  Message from : ").append(split9[2]);
-				msg.append("/n");
-				noMSG = false;
+				msg.append(split9[1]);
+				outStream.writeObject(msg.toString());
+	
+				msg2.append("  Message from : ").append(split9[2]).append("/n");
+				outStream.writeObject(msg2.toString());
+				outStream.writeObject(close);
+				// noMSG = false;
 			}
 		}
-		outStream.writeObject(msg.toString());
+		close = true;
+		outStream.writeObject(close);
 	}
 
 	private void sellWine(String name, double value, int quantity, User currentUser, ObjectOutputStream outStream)
@@ -494,7 +557,7 @@ public class TintolmarketServer {
 		}
 		
 	    
-		
+		fis.close();
 	}
 
 	private void writeObjectToFile(File f, Object o) throws IOException{
@@ -507,16 +570,20 @@ public class TintolmarketServer {
 	private ArrayList<String> transformarUser(ArrayList<User> users){
 		ArrayList<String> ars = new ArrayList<>();
 		for (User u : users) {
-			ars.add(u.getUsername() + " " + u.getWallet());
+			ars.add(u.getUsername() + " " + u.getWallet() + " " + u.getPk().getEncoded().toString());
 		}
 		return ars;
 	}
 
-	private ArrayList<User> transformarEmUserUser(ArrayList<String> data){
+	private ArrayList<User> transformarEmUserUser(ArrayList<String> data) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException{
 		ArrayList<User> users = new ArrayList<>();
 		for (String s : data) {
 			String[] split = s.split(" ");
-			users.add(new User(split[0], Integer.parseInt(split[1])));
+			byte[] encKey = split[2].getBytes();
+			X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(encKey);
+			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+			PublicKey pubKey = keyFactory.generatePublic(pubKeySpec); 
+			users.add(new User(split[0], Integer.parseInt(split[1]), pubKey));
 		}
 		return users; 
 	}
