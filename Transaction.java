@@ -3,10 +3,10 @@ public class Transaction {
 	private int ID;
 	private String state;
 	private String user;
-	private int value;
+	private double value;
 	
 	
-	public Transaction (int ID, String state, String user, int value) {
+	public Transaction (int ID, String state, String user, double value) {
 		this.ID = ID;
 		this.state=state;
 		this.user=user;
