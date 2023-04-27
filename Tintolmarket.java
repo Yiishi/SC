@@ -40,27 +40,22 @@ public class Tintolmarket {
                 String truststoreS = args[1];
                 String keystoreS = args[2];
                 passwordKeystore = args[3];
+                String username = args[4];
 
-                System.setProperty("javax.net.ssl.trustStore", args[1]);
+                System.setProperty("javax.net.ssl.trustStore", truststoreS);
                 System.setProperty("javax.net.ssl.trustStorePassword", "123456");   
 
-                System.setProperty("javax.net.ssl.keyStore", args[2]);
-                System.setProperty("javax.net.ssl.keyStorePassword", args[3]); 
-
-                System.out.println("43");
+                System.setProperty("javax.net.ssl.keyStore", keystoreS);
+                System.setProperty("javax.net.ssl.keyStorePassword", passwordKeystore); 
 
                 FileInputStream Tfile = new FileInputStream(truststoreS);
-                System.out.println("46");
                 trustStore = KeyStore.getInstance("PKCS12");
-                System.out.println("48");
                 trustStore.load(Tfile, passwordKeystore.toCharArray());
-                System.out.println("50");
                 FileInputStream kfile = new FileInputStream(keystoreS);
                 keystore = KeyStore.getInstance("PKCS12");
                 keystore.load(kfile, passwordKeystore.toCharArray());
-                privateKey = keystore.getKey(args[4], passwordKeystore.toCharArray());
-                Certificate cert = (Certificate) keystore.getCertificate(args[4]);
-                PublicKey pk = cert.getPublicKey();
+                privateKey = keystore.getKey(username, passwordKeystore.toCharArray());
+                Certificate cert = (Certificate) keystore.getCertificate(username);
                 
                 String[] st = args[0].split(":");
 
@@ -69,8 +64,6 @@ public class Tintolmarket {
                 } else {
                     portNumber = 12345;
                 }
-
-                   
 
                 SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 
@@ -82,12 +75,12 @@ public class Tintolmarket {
                 dataInputStream = new DataInputStream(clientSocket.getInputStream());
                 dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
 
-                outToServer.writeObject(args[4]);//user id sent to server
+                outToServer.writeObject(username);//user id sent to server
                 //outToServer.writeObject(args[2]); já n há password normal
 
                 Long nonce = (Long) inFromServer.readObject();
                 String flag = (String) inFromServer.readObject();
-                Key myPrivateKey = keystore.getKey(args[4], "123456".toCharArray());
+                Key myPrivateKey = keystore.getKey(username, passwordKeystore.toCharArray());
                 //codificar o nonce com a private key
                 byte[] encrypted = Crypt.Encrypt(myPrivateKey, nonce);
                 if (flag.equals("202 ACCEPTED")) {
@@ -96,7 +89,7 @@ public class Tintolmarket {
                 }else if(flag.equals("404 NOT FOUND")){
                     outToServer.writeObject(nonce);
                     outToServer.writeObject(encrypted);
-                    outToServer.writeObject(pk);
+                    outToServer.writeObject(username+"pub.cer");
                 }
 
                 Scanner ler = new Scanner(System.in);
@@ -108,7 +101,7 @@ public class Tintolmarket {
                     System.out.println((String) inFromServer.readObject() + "\n");
                     String userId = (String) inFromServer.readObject();
                     int wallet = (int) inFromServer.readObject();
-                    user = new User(userId, wallet, pk);
+                    user = new User(userId, wallet, username+"pub.cer");
 
                     
 
@@ -126,7 +119,7 @@ public class Tintolmarket {
                         System.out.println("Fechar: quit\n");
 
                         String acao = ler.nextLine();
-                        if(acao.equals("quit")){
+                        if(acao.equals("quit")||acao.equals("q")){
                             outToServer.writeObject("quit");
                             quit = true;
                         }else{
@@ -158,8 +151,6 @@ public class Tintolmarket {
             if (split.length == 3) {
                 add(split[1], split[2]);
                 if((Boolean) inFromServer.readObject() == false){
-
-                    System.out.println("aqui");
     
                     int i;
                     File ifile = new File(split[2]);
@@ -168,7 +159,6 @@ public class Tintolmarket {
                     }
                     FileInputStream fis = new FileInputStream (split[2]);
     
-                    System.out.println(ifile.length());
                     outToServer.writeLong(ifile.length());
                     long fileLength = ifile.length();
                     long acc = 0;
@@ -181,7 +171,6 @@ public class Tintolmarket {
                             System.out.println("Erro ao enviar a imagem");
                             break;
                         }
-                        System.out.println(i);
                         outToServer.write(buffer, 0, i);
                         acc += i;}
                     
@@ -256,9 +245,9 @@ public class Tintolmarket {
                 read();
                 boolean close = false;
                 while (close == false) {
-                    byte[] msg = (byte[]) inFromServer.readObject();
+                    String msg = (String) inFromServer.readObject();
                     String msg2 = (String) inFromServer.readObject();
-                    System.out.println(Crypt.Decrypt(privateKey, msg));
+                    System.out.println(Crypt.Decrypt(privateKey, msg.getBytes()));
                     System.out.println(msg2);
                     if ((boolean) inFromServer.readObject() == true) {
                         close = true;  
@@ -281,7 +270,6 @@ public class Tintolmarket {
     }
 
     public static void talk(String user, byte[] b) throws Exception {
-        System.out.println("talk");
         outToServer.writeObject("talk/" + user + "/" + b);
     }
 
@@ -310,8 +298,6 @@ public class Tintolmarket {
 
         long fileSize = inFromServer.readLong();
 
-        System.out.println("aqui");
-
         try {
             FileOutputStream fos = new FileOutputStream("images/"+image);
 
@@ -319,7 +305,6 @@ public class Tintolmarket {
             int bytesread = 0;
             long bytesRecived = 0;
 
-            System.out.println("file size: " + fileSize);
             while (bytesRecived < fileSize){
                 bytesread = inFromServer.read(buffer);
                 
@@ -329,7 +314,6 @@ public class Tintolmarket {
 
                 fos.write(buffer, 0, bytesread);
                 bytesRecived += bytesread;
-                System.out.println(bytesRecived);
             }
 
             fos.flush();

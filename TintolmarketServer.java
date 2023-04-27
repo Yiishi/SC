@@ -13,8 +13,11 @@
 
 import java.io.IOException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -31,9 +34,10 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Random;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.*;
 import javax.print.attribute.standard.NumberOfInterveningJobs;
@@ -59,8 +63,10 @@ public class TintolmarketServer {
 	private String passwordKeyStore;
 	private int TransactionID=1;
 	private int blockID=1;
-	private Key key;
+	private String certificado;
+	private SecretKey secret;
 	private Key privateKey;
+
 
 	/**
 	 * @param port
@@ -105,33 +111,46 @@ public class TintolmarketServer {
 			TintolmarketServer server = new TintolmarketServer(Integer.parseInt(args[0]));
 			server.startServer(args);
 		}
+
+		
+		
+		
 	}
 
-	public void startServer(String[] args) {
+	public void startServer(String[] args) throws NoSuchAlgorithmException, InvalidKeySpecException {
 		//ServerSocket sSoc = null;
-		System.setProperty("javax.net.ssl.keyStore", args[2]);
-		System.setProperty("javax.net.ssl.keyStorePassword", args[3]);
-		SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-
-		SSLServerSocket sSoc = null;
 		
+		SSLServerSocket sSoc = null;
 		try {
 			if (args.length == 3) {
-
-				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(12345);
-
 				passwordCifra = args[0];
+
+				String salt = "12345678";
+				SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+				KeySpec spec = new PBEKeySpec(passwordCifra.toCharArray(), salt.getBytes(), 65536, 256);
+				secret = new SecretKeySpec(factory.generateSecret(spec)
+					.getEncoded(), "AES");
+
+
+
 				keyStore = args[1];
 				passwordKeyStore = args[2];
 
+				System.setProperty("javax.net.ssl.keyStore", keyStore);
+				System.setProperty("javax.net.ssl.keyStorePassword", passwordKeyStore);
+		
+				SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(12345);
 			} else {
-
-				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(Integer.parseInt(args[0]));
-
 				passwordCifra = args[1];
 				keyStore = args[2];
 				passwordKeyStore = args[3];
-				
+
+				System.setProperty("javax.net.ssl.keyStore", keyStore);
+				System.setProperty("javax.net.ssl.keyStorePassword", passwordKeyStore);
+		
+				SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(Integer.parseInt(args[0]));
 			}
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
@@ -229,15 +248,18 @@ public class TintolmarketServer {
 				FileInputStream kfile = new FileInputStream(keyStore); //keystore
 				kstore.load(kfile, passwordKeyStore.toCharArray());
 				privateKey = kstore.getKey("server", passwordKeyStore.toCharArray());
-				
+				FileOutputStream fos = new FileOutputStream("userLog.txt");
+				FileInputStream fis = new FileInputStream("EncryptedUserLog.cif");
+
 				FileReader fr = new FileReader("EncryptedUserLog.cif");
 				BufferedReader br2 = new BufferedReader(fr);
-				String s2;
-				if((s2 = br2.readLine()) != null){
+
+				if((br2.readLine()) != null){
 					Crypt.DecryptFile(privateKey);
 				}
-				
-				
+				br2.close();
+				fis.close();
+				fos.close();
 				BufferedReader br = new BufferedReader(new FileReader(new File("userLog.txt")));
 				boolean userExists = false;
 
@@ -245,6 +267,7 @@ public class TintolmarketServer {
 				for (String x = br.readLine(); x != null; x = br.readLine()) {
 					String[] split = x.split(":");
 					if (split[0].equals(user)) {
+						certificado = split[1];
 						userExists = true;
 						break;
 					}
@@ -260,8 +283,13 @@ public class TintolmarketServer {
 
 					Long received_nonse = (Long) inStream.readObject();
 					byte[] encrypted = (byte[]) inStream.readObject();
-					PublicKey key = (PublicKey) inStream.readObject();
-					Long desencrypted = Long.parseLong(Crypt.Decrypt(key, encrypted));
+					String keycert = (String) inStream.readObject();
+					FileInputStream fis3 = new FileInputStream(keycert);
+					CertificateFactory cf = CertificateFactory.getInstance("X509");
+					Certificate cert = cf.generateCertificate(fis3);	
+					PublicKey pk = cert.getPublicKey();
+
+					Long desencrypted = Long.parseLong(Crypt.Decrypt(pk, encrypted));
 
 					if(received_nonse != nonse || desencrypted != nonse){
 						outStream.writeObject("fechar");
@@ -269,7 +297,7 @@ public class TintolmarketServer {
 						outStream.writeObject("nao fechar");
 					}
 
-					currentUser = new User(user, 200, key);
+					currentUser = new User(user, 200, keycert);
 					userList.add(currentUser);
 
 					writeObjectToFile(users, transformarUser(userList));
@@ -280,14 +308,20 @@ public class TintolmarketServer {
 
 				} else{
 					outStream.writeObject("202 ACCEPTED");
-					byte[] encrypted = (byte[]) inStream.readObject();
+					String encrypted = (String) inStream.readObject();
 					for (User u : userList) {
 						if (u.getUsername().equals(user)) {
 							currentUser = u;
 							break;
 						}
 					}
-					Long desencrypted = Long.parseLong(Crypt.Decrypt(currentUser.getPk(), encrypted));
+
+					FileInputStream fis3 = new FileInputStream(currentUser.getPk());
+					CertificateFactory cf = CertificateFactory.getInstance("X509");
+					Certificate cert = cf.generateCertificate(fis3);	
+					PublicKey pk = cert.getPublicKey();
+
+					Long desencrypted = Long.parseLong(Crypt.Decrypt(pk, encrypted.getBytes()));
 					if(desencrypted == nonse){
 						outStream.writeObject("nao fechar");
 						outStream.writeObject("autenticado");
@@ -296,11 +330,13 @@ public class TintolmarketServer {
 					}
 				}
 
-				
+				FileOutputStream fos2 = new FileOutputStream("EncryptedUserLog.txt");
+				FileInputStream fis2 = new FileInputStream("userLog.txt");
 				Certificate cert = (Certificate) kstore.getCertificate("server");
 				PublicKey pk = cert.getPublicKey( ); 
 				Crypt.EncryptFile(pk);
-				
+				fis2.close();
+				fos2.close();
 				outStream.writeObject(currentUser.getUsername());
 				outStream.writeObject(currentUser.getWallet());
 
@@ -309,7 +345,6 @@ public class TintolmarketServer {
 					String acao = (String) inStream.readObject();
 					if(acao.equals("quit")){
 						quit = true;
-						System.out.println("thread fechada");
 					}else{
 						avaluateRequest(acao, currentUser, outStream, inStream);
 					}
@@ -354,7 +389,6 @@ public class TintolmarketServer {
 			classifyWine(split2[1], Integer.parseInt(split2[2]), currentUser, outStream);
 
 		} else if (split[0].contains("talk")) {
-			System.out.println("avaliaRequest");
 			String[] split3 = str.split("/");
 			talk(split3[1], split3[2], currentUser, outStream);
 
@@ -378,15 +412,13 @@ public class TintolmarketServer {
 			boolean b = false;
 			outStream.writeObject(b);
 
-			System.out.println("nome da imagem: "+image);
+
 			Wines newWine = new Wines(wine, "", 0, 0, image);
-			System.out.println(newWine.getimage());
-			
+			winesList.add(newWine);
 			
 			//outStream.writeObject("O vinho foi adicionado ao catalogo");
 
 			long fileSize = inStream.readLong();
-			System.out.println("aqui");
 			try {
 				FileOutputStream fos = new FileOutputStream("images/"+image);
 
@@ -394,7 +426,6 @@ public class TintolmarketServer {
 				int bytesread = 0;
 				long bytesRecived = 0;
 
-				System.out.println("file size: " + fileSize);
 				while (bytesRecived < fileSize){
 					bytesread = inStream.read(buffer);
 					
@@ -404,16 +435,12 @@ public class TintolmarketServer {
 
 					fos.write(buffer, 0, bytesread);
 					bytesRecived += bytesread;
-					System.out.println(bytesRecived);
 				}
-
-				
 
 				fos.flush();
 				fos.close();
-				winesList.add(newWine);
 				writeObjectToFile(wines, transformarWines(winesList));
-				
+
 				outStream.writeObject("imagem adicionda com sucesso");
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -448,11 +475,6 @@ public class TintolmarketServer {
 
 		} else {
 			wine.sell(quantity);
-
-			if(wine.getQuantity() == 0){
-				winesForSaleList.remove(wine);
-			}
-
 			writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
 			for (User i : userList) {
 				if (i.getUsername().equals(sellerID)) {
@@ -534,7 +556,6 @@ public class TintolmarketServer {
 			outStream.writeObject("O vinho que pretende vender nao se encontra no catalogo");
 		} else {
 			Wines newWine = new Wines(name, currentUser.getUsername(), value, quantity, null);
-			System.out.println(value + " , "+ newWine.getPrice());
 			winesForSaleList.add(newWine);
 			writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
 			int index = blockchain.size();
@@ -561,7 +582,7 @@ public class TintolmarketServer {
 	}
 
 	private void talk(String user, String message, User currentUser, ObjectOutputStream outStream) throws Exception {
-		System.out.println("aqui");
+
 
 		if(getUser(user) == null){
 			outStream.writeObject("Usuario nao existente");
@@ -593,7 +614,6 @@ public class TintolmarketServer {
 		Wines wine2 = getWineForSale(wineID);
 
 		String image = wine.getimage();
-		System.out.println("nome da imagem no view:"+image);
 
 		outStream.writeObject(image);
 		
@@ -603,9 +623,8 @@ public class TintolmarketServer {
 		if(ifile.exists()){
 			System.out.println("ficheiro existe");
 		}
-        FileInputStream fis = new FileInputStream ("images/"+image);
+        FileInputStream fis = new FileInputStream (ifile);
 
-		System.out.println(ifile.length());
 		outStream.writeLong(ifile.length());
 		long fileLength = ifile.length();
 		long acc = 0;
@@ -618,7 +637,6 @@ public class TintolmarketServer {
 				System.out.println("Erro ao enviar a imagem");
 				break;
 			}
-			System.out.println(i);
 			outStream.write(buffer, 0, i);
 			acc += i;}
 		
@@ -629,7 +647,7 @@ public class TintolmarketServer {
 								  "Imagem : "+wine.getimage());
 		}else{
 			outStream.writeObject("Vinho : "+wine2.getWinename()+ " vendido por: "+wine2.getUsername()+ " preco: "+wine2.getPrice()
-		                         +" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine.getClassify());
+		                         +" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine2.getClassify());
 		}
 		
 	    
@@ -646,25 +664,19 @@ public class TintolmarketServer {
 	private ArrayList<String> transformarUser(ArrayList<User> users){
 		ArrayList<String> ars = new ArrayList<>();
 		for (User u : users) {
-			ars.add(u.getUsername() + " " + u.getWallet() + " " + u.getPk().getEncoded().toString());
+			ars.add(u.getUsername() + " " + u.getWallet() + " " + u.getPk());
 		}
 		return ars;
 	}
 
-	private ArrayList<User> transformarEmUserUser(ArrayList<String> data) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException{
+	private ArrayList<User> transformarEmUserUser(ArrayList<String> data) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException, FileNotFoundException, CertificateException{
 		ArrayList<User> users = new ArrayList<>();
 		for (String s : data) {
 			String[] split = s.split(" ");
 
-			for (String x = br.readLine(); x != null; x = br.readLine()) {
-				String[] split2 = x.split(":");
-				if (split2[0].equals(split[0])) {
-					
-					Key key = new SecretKeySpec(split[2].getBytes(),0,split[2].getBytes().length, "RSA");
-					users.add(new User(split[0], Integer.parseInt(split[1]), (PublicKey) key));
-					break;
-				}
-			}
+			users.add(new User(split[0], Integer.parseInt(split[1]),split[2]));
+			break;
+			
 		}
 		return users; 
 	}
@@ -683,7 +695,6 @@ public class TintolmarketServer {
 		for (String s : data) {
 			String[] split = s.split(" ");
 			wines.add(new Wines(split[0],null,0,0, split[1]));
-			System.out.println(split[1]);
 		}
 		return wines;
 	}

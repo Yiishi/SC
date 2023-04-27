@@ -10,9 +10,9 @@ public class User {
 
     private String username;
     private int wallet = 0;
-    private PublicKey pk;
+    private String pk;
 
-    public User(String name, int wallet, PublicKey pk){
+    public User(String name, int wallet, String pk){
         username = name;
         this.wallet = wallet;
         this.pk = pk;
@@ -34,7 +34,7 @@ public class User {
     	wallet-=price;
     }
 
-    public PublicKey getPk() {
+    public String getPk() {
         return pk;
     }
 }
