@@ -12,6 +12,9 @@ import java.security.cert.Certificate;
 import java.util.Scanner;
 import java.util.zip.Inflater;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
 public class Tintolmarket {
     BufferedReader br;
     File wines = new File("wines.txt");
@@ -30,23 +33,34 @@ public class Tintolmarket {
     private static String passwordKeystore;
     
     public static void main(String[] args) throws Exception {
-        try {
-            if (args.length == 5) {
+        //try {
+            
+            if (args.length == 5) { 
 
                 String truststoreS = args[1];
                 String keystoreS = args[2];
                 passwordKeystore = args[3];
 
-                FileInputStream Tfile = new FileInputStream(truststoreS);
-                trustStore = KeyStore.getInstance("JCEKS");
-                trustStore.load(Tfile, passwordKeystore.toCharArray());
+                System.setProperty("javax.net.ssl.trustStore", args[1]);
+                System.setProperty("javax.net.ssl.trustStorePassword", "123456");   
 
+                System.setProperty("javax.net.ssl.keyStore", args[2]);
+                System.setProperty("javax.net.ssl.keyStorePassword", args[3]); 
+
+                System.out.println("43");
+
+                FileInputStream Tfile = new FileInputStream(truststoreS);
+                System.out.println("46");
+                trustStore = KeyStore.getInstance("PKCS12");
+                System.out.println("48");
+                trustStore.load(Tfile, passwordKeystore.toCharArray());
+                System.out.println("50");
                 FileInputStream kfile = new FileInputStream(keystoreS);
-                keystore = KeyStore.getInstance("JCEKS");
+                keystore = KeyStore.getInstance("PKCS12");
                 keystore.load(kfile, passwordKeystore.toCharArray());
-                privateKey = keystore.getKey("keyRSA", passwordKeystore.toCharArray());
-                Certificate cert = (Certificate) keystore.getCertificate("keyRSA");
-                PublicKey pk = cert.getPublicKey( );
+                privateKey = keystore.getKey(args[4], passwordKeystore.toCharArray());
+                Certificate cert = (Certificate) keystore.getCertificate(args[4]);
+                PublicKey pk = cert.getPublicKey();
                 
                 String[] st = args[0].split(":");
 
@@ -56,7 +70,13 @@ public class Tintolmarket {
                     portNumber = 12345;
                 }
 
-                clientSocket = new Socket(st[0]/* hostname */, portNumber);
+                   
+
+                SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+
+                SSLSocket clientSocket = (SSLSocket) sslSocketFactory.createSocket(st[0]/* hostname */, portNumber);
+
+                //clientSocket = new Socket(st[0]/* hostname */, portNumber);
                 outToServer = new ObjectOutputStream(clientSocket.getOutputStream());
                 inFromServer = new ObjectInputStream(clientSocket.getInputStream());
                 dataInputStream = new DataInputStream(clientSocket.getInputStream());
@@ -67,9 +87,9 @@ public class Tintolmarket {
 
                 Long nonce = (Long) inFromServer.readObject();
                 String flag = (String) inFromServer.readObject();
-                Key myPrivateKey = keystore.getKey("keyRSA", "123456".toCharArray());
+                Key myPrivateKey = keystore.getKey(args[4], "123456".toCharArray());
                 //codificar o nonce com a private key
-                String encrypted = "";
+                byte[] encrypted = Crypt.Encrypt(myPrivateKey, nonce);
                 if (flag.equals("202 ACCEPTED")) {
                     outToServer.writeObject(encrypted);
                     
@@ -121,14 +141,14 @@ public class Tintolmarket {
                 dataOutputStream.close();
                 dataInputStream.close();
             }
-        } catch (Exception e) {
-            outToServer.writeObject("quit");
-            outToServer.close();
-            inFromServer.close();				
-            clientSocket.close();
-            dataOutputStream.close();
-            dataInputStream.close();
-        }
+        // } catch (Exception e) {
+        //     outToServer.writeObject("quit");
+        //     outToServer.close();
+        //     inFromServer.close();				
+        //     clientSocket.close();
+        //     dataOutputStream.close();
+        //     dataInputStream.close();
+        // }
     }
 
     public static void avaliaAcao(String acao) throws Exception {
@@ -166,13 +186,10 @@ public class Tintolmarket {
                         acc += i;}
                     
                     fis.close();
+                    outToServer.flush();
                 }
-
-                outToServer.flush();
                 
-                
-                System.out.println((String) inFromServer.readObject()); 
-                
+                System.out.println((String) inFromServer.readObject());   
                 
 
             } else {

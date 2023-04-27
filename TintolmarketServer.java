@@ -95,16 +95,13 @@ public class TintolmarketServer {
 			TintolmarketServer server = new TintolmarketServer(Integer.parseInt(args[0]));
 			server.startServer(args);
 		}
-
-		
-		
-		
 	}
 
 	public void startServer(String[] args) {
 		//ServerSocket sSoc = null;
-		SSLServerSocketFactory sslServerSocketFactory =
-                (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+		System.setProperty("javax.net.ssl.keyStore", args[2]);
+		System.setProperty("javax.net.ssl.keyStorePassword", args[3]);
+		SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 
 		SSLServerSocket sSoc = null;
 		
@@ -128,6 +125,19 @@ public class TintolmarketServer {
 			}
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
+		}
+
+		while (true) {
+			try {
+				//Socket inSoc = sSoc.accept();
+				Socket inSoc = (Socket) sSoc.accept();
+				ServerThread newServerThread = new ServerThread(inSoc);
+				newServerThread.start();
+
+				//new ServerThread(sSoc.accept()).start( ); // uma thread por ligação
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -205,21 +215,26 @@ public class TintolmarketServer {
 
 				User currentUser = null;
 				
-				KeyStore kstore = KeyStore.getInstance("JCEKS");
+				KeyStore kstore = KeyStore.getInstance("PKCS12");
 				FileInputStream kfile = new FileInputStream(keyStore); //keystore
 				kstore.load(kfile, passwordKeyStore.toCharArray());
-				Key myPrivateKey = kstore.getKey("keyRSA", passwordKeyStore.toCharArray());
-				FileOutputStream fos = new FileOutputStream("userLog.txt");
-				FileInputStream fis = new FileInputStream("EncryptedUserLog.txt");
-				Crypt.DecryptFile(myPrivateKey, outStream, fis, fos);
-				fis.close();
-				fos.close();
+				Key myPrivateKey = kstore.getKey("server", passwordKeyStore.toCharArray());
+				
+				FileReader fr = new FileReader("EncryptedUserLog.cif");
+				BufferedReader br2 = new BufferedReader(fr);
+				String s2;
+				if((s2 = br2.readLine()) != null){
+					Crypt.DecryptFile(myPrivateKey);
+				}
+				
+				
 				BufferedReader br = new BufferedReader(new FileReader(new File("userLog.txt")));
 				boolean userExists = false;
 
 
 				for (String x = br.readLine(); x != null; x = br.readLine()) {
-					if (x.equals(user)) {
+					String[] split = x.split(":");
+					if (split[0].equals(user)) {
 						userExists = true;
 						break;
 					}
@@ -234,9 +249,9 @@ public class TintolmarketServer {
 					outStream.writeObject("404 NOT FOUND");
 
 					Long received_nonse = (Long) inStream.readObject();
-					String encrypted = (String) inStream.readObject();
+					byte[] encrypted = (byte[]) inStream.readObject();
 					PublicKey key = (PublicKey) inStream.readObject();
-					Long desencrypted = Long.parseLong(Crypt.Decrypt(key, encrypted.getBytes()));
+					Long desencrypted = Long.parseLong(Crypt.Decrypt(key, encrypted));
 
 					if(received_nonse != nonse || desencrypted != nonse){
 						outStream.writeObject("fechar");
@@ -250,19 +265,19 @@ public class TintolmarketServer {
 					writeObjectToFile(users, transformarUser(userList));
 					outStream.writeObject("Registado");
 					FileWriter fw= new FileWriter (userlog, true);
-					String s = user;
+					String s = user+":"+key.getEncoded().toString();
 					writeFile(fw, s);
 
 				} else{
 					outStream.writeObject("202 ACCEPTED");
-					String encrypted = (String) inStream.readObject();
+					byte[] encrypted = (byte[]) inStream.readObject();
 					for (User u : userList) {
 						if (u.getUsername().equals(user)) {
 							currentUser = u;
 							break;
 						}
 					}
-					Long desencrypted = Long.parseLong(Crypt.Decrypt(currentUser.getPk(), encrypted.getBytes()));
+					Long desencrypted = Long.parseLong(Crypt.Decrypt(currentUser.getPk(), encrypted));
 					if(desencrypted == nonse){
 						outStream.writeObject("nao fechar");
 						outStream.writeObject("autenticado");
@@ -271,13 +286,11 @@ public class TintolmarketServer {
 					}
 				}
 
-				FileOutputStream fos2 = new FileOutputStream("EncryptedUserLog.txt");
-				FileInputStream fis2 = new FileInputStream("userLog.txt");
-				Certificate cert = (Certificate) kstore.getCertificate("keyRSA");
+				
+				Certificate cert = (Certificate) kstore.getCertificate("server");
 				PublicKey pk = cert.getPublicKey( ); 
-				Crypt.EncryptFile(pk, outStream, fis2, fos2);
-				fis2.close();
-				fos2.close();
+				Crypt.EncryptFile(pk);
+				
 				outStream.writeObject(currentUser.getUsername());
 				outStream.writeObject(currentUser.getWallet());
 
@@ -286,6 +299,7 @@ public class TintolmarketServer {
 					String acao = (String) inStream.readObject();
 					if(acao.equals("quit")){
 						quit = true;
+						System.out.println("thread fechada");
 					}else{
 						avaluateRequest(acao, currentUser, outStream, inStream);
 					}
@@ -357,7 +371,7 @@ public class TintolmarketServer {
 			System.out.println("nome da imagem: "+image);
 			Wines newWine = new Wines(wine, "", 0, 0, image);
 			System.out.println(newWine.getimage());
-			winesList.add(newWine);
+			
 			
 			//outStream.writeObject("O vinho foi adicionado ao catalogo");
 
@@ -383,10 +397,13 @@ public class TintolmarketServer {
 					System.out.println(bytesRecived);
 				}
 
+				
+
 				fos.flush();
 				fos.close();
+				winesList.add(newWine);
 				writeObjectToFile(wines, transformarWines(winesList));
-
+				
 				outStream.writeObject("imagem adicionda com sucesso");
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -421,6 +438,11 @@ public class TintolmarketServer {
 
 		} else {
 			wine.sell(quantity);
+
+			if(wine.getQuantity() == 0){
+				winesForSaleList.remove(wine);
+			}
+
 			writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
 			for (User i : userList) {
 				if (i.getUsername().equals(sellerID)) {
@@ -535,7 +557,7 @@ public class TintolmarketServer {
 		if(ifile.exists()){
 			System.out.println("ficheiro existe");
 		}
-        FileInputStream fis = new FileInputStream (ifile);
+        FileInputStream fis = new FileInputStream ("images/"+image);
 
 		System.out.println(ifile.length());
 		outStream.writeLong(ifile.length());
@@ -561,7 +583,7 @@ public class TintolmarketServer {
 								  "Imagem : "+wine.getimage());
 		}else{
 			outStream.writeObject("Vinho : "+wine2.getWinename()+ " vendido por: "+wine2.getUsername()+ " preco: "+wine2.getPrice()
-		                         +" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine2.getClassify());
+		                         +" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine.getClassify());
 		}
 		
 	    
@@ -590,7 +612,7 @@ public class TintolmarketServer {
 			byte[] encKey = split[2].getBytes();
 			X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(encKey);
 			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-			PublicKey pubKey = keyFactory.generatePublic(pubKeySpec); 
+			PublicKey pubKey = keyFactory.generatePublic(pubKeySpec);
 			users.add(new User(split[0], Integer.parseInt(split[1]), pubKey));
 		}
 		return users; 
