@@ -31,6 +31,10 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Random;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.*;
 import javax.print.attribute.standard.NumberOfInterveningJobs;
 
@@ -55,6 +59,8 @@ public class TintolmarketServer {
 	private String passwordKeyStore;
 	private int TransactionID=1;
 	private int blockID=1;
+	private Key key;
+	private Key privateKey;
 
 	/**
 	 * @param port
@@ -222,13 +228,13 @@ public class TintolmarketServer {
 				KeyStore kstore = KeyStore.getInstance("PKCS12");
 				FileInputStream kfile = new FileInputStream(keyStore); //keystore
 				kstore.load(kfile, passwordKeyStore.toCharArray());
-				Key myPrivateKey = kstore.getKey("server", passwordKeyStore.toCharArray());
+				privateKey = kstore.getKey("server", passwordKeyStore.toCharArray());
 				
 				FileReader fr = new FileReader("EncryptedUserLog.cif");
 				BufferedReader br2 = new BufferedReader(fr);
 				String s2;
 				if((s2 = br2.readLine()) != null){
-					Crypt.DecryptFile(myPrivateKey);
+					Crypt.DecryptFile(privateKey);
 				}
 				
 				
@@ -269,7 +275,7 @@ public class TintolmarketServer {
 					writeObjectToFile(users, transformarUser(userList));
 					outStream.writeObject("Registado");
 					FileWriter fw= new FileWriter (userlog, true);
-					String s = user+":"+key.getEncoded().toString();
+					String s = user+":"+user+"pub.cer";
 					writeFile(fw, s);
 
 				} else{
@@ -645,15 +651,20 @@ public class TintolmarketServer {
 		return ars;
 	}
 
-	private ArrayList<User> transformarEmUserUser(ArrayList<String> data) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException{
+	private ArrayList<User> transformarEmUserUser(ArrayList<String> data) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException{
 		ArrayList<User> users = new ArrayList<>();
 		for (String s : data) {
 			String[] split = s.split(" ");
-			byte[] encKey = split[2].getBytes();
-			X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(encKey);
-			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-			PublicKey pubKey = keyFactory.generatePublic(pubKeySpec);
-			users.add(new User(split[0], Integer.parseInt(split[1]), pubKey));
+
+			for (String x = br.readLine(); x != null; x = br.readLine()) {
+				String[] split2 = x.split(":");
+				if (split2[0].equals(split[0])) {
+					
+					Key key = new SecretKeySpec(split[2].getBytes(),0,split[2].getBytes().length, "RSA");
+					users.add(new User(split[0], Integer.parseInt(split[1]), (PublicKey) key));
+					break;
+				}
+			}
 		}
 		return users; 
 	}
