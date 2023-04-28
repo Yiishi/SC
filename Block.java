@@ -54,5 +54,9 @@ public class Block {
     	transactions.add(transaction);
     	return "transacao adicionada";
     }
+    
+    public void List() {
+    	
+    }
 
 }

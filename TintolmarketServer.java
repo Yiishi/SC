@@ -559,35 +559,40 @@ public class TintolmarketServer {
 		outStream.writeObject(close);
 	}
 
-	private void sellWine(String name, double value, int quantity, User currentUser, ObjectOutputStream outStream, ObjectInputStream inStream)
-		throws Exception {
-			Signature s = (Signature) inStream.readObject();
-			if (getWine(name) == null) {
-				outStream.writeObject("O vinho que pretende vender nao se encontra no catalogo");
-			} else {
-				Wines newWine = new Wines(name, currentUser.getUsername(), value, quantity, null);
-				winesForSaleList.add(newWine);
-				writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
-				int index = blockchain.size();
-				if(index!=0 && blockchain.get(index-1).getTransactionsLength()<5) {
+	private void sellWine(String name, double value, int quantity, User currentUser, ObjectOutputStream outStream)
+			throws Exception {
+		Signature s = (Signature) inStream.readObject();
+		if (getWine(name) == null) {
+			outStream.writeObject("O vinho que pretende vender nao se encontra no catalogo");
+		} else {
+			Wines newWine = new Wines(name, currentUser.getUsername(), value, quantity, null);
+			System.out.println(value + " , "+ newWine.getPrice());
+			winesForSaleList.add(newWine);
+			writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
+			int index = blockchain.size();
+			if (index==0) {
+				Block newblock = new Block(Integer.toString(blockID));
+				newblock.addTransaction(new Transaction(TransactionID, "buy",currentUser.getUsername(), newWine.getPrice()));
+				blockchain.add(newblock);
+				TransactionID++;
+				blockID++;
+			}else {
+				if(blockchain.get(index-1).getTransactionsLength()<5) {
 					blockchain.get(index-1).addTransaction(new Transaction(TransactionID, "buy", currentUser.getUsername(), newWine.getPrice()));
 					TransactionID++;
-				}else {
-					if(blockID!=1) {
+				}
+					else {
+						blockchain.get(index-1).List();
 						Block newblock=new Block(Integer.toString(blockID), blockchain.get(index-1).calculateBlockHash());
 						newblock.addTransaction(new Transaction(TransactionID, "buy",currentUser.getUsername(), newWine.getPrice()));
 						blockchain.add(newblock);
 						TransactionID++;
 						blockID++;
-					}else {
-						Block newblock = new Block(Integer.toString(blockID));
-						newblock.addTransaction(new Transaction(TransactionID, "buy",currentUser.getUsername(), newWine.getPrice()));
-						blockchain.add(newblock);
-						TransactionID++;
-						blockID++;
 					}
-				outStream.writeObject("Vinho colocado a venda com sucesso");	
-				}
+
+				
+			outStream.writeObject("Vinho colocado a venda com sucesso");	
+			}
 		}
 	}
 
