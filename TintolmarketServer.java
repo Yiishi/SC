@@ -538,23 +538,27 @@ public class TintolmarketServer {
 			winesForSaleList.add(newWine);
 			writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
 			int index = blockchain.size();
-			if(index!=0 && blockchain.get(index-1).getTransactionsLength()<5) {
-				blockchain.get(index-1).addTransaction(new Transaction(TransactionID, "buy", currentUser.getUsername(), newWine.getPrice()));
+			if (index==0) {
+				Block newblock = new Block(Integer.toString(blockID));
+				newblock.addTransaction(new Transaction(TransactionID, "buy",currentUser.getUsername(), newWine.getPrice()));
+				blockchain.add(newblock);
 				TransactionID++;
+				blockID++;
 			}else {
-				if(blockID!=1) {
-					Block newblock=new Block(Integer.toString(blockID), blockchain.get(index-1).calculateBlockHash());
-					newblock.addTransaction(new Transaction(TransactionID, "buy",currentUser.getUsername(), newWine.getPrice()));
-					blockchain.add(newblock);
+				if(blockchain.get(index-1).getTransactionsLength()<5) {
+					blockchain.get(index-1).addTransaction(new Transaction(TransactionID, "buy", currentUser.getUsername(), newWine.getPrice()));
 					TransactionID++;
-					blockID++;
-				}else {
-					Block newblock = new Block(Integer.toString(blockID));
-					newblock.addTransaction(new Transaction(TransactionID, "buy",currentUser.getUsername(), newWine.getPrice()));
-					blockchain.add(newblock);
-					TransactionID++;
-					blockID++;
 				}
+					else {
+						blockchain.get(index-1).List();
+						Block newblock=new Block(Integer.toString(blockID), blockchain.get(index-1).calculateBlockHash());
+						newblock.addTransaction(new Transaction(TransactionID, "buy",currentUser.getUsername(), newWine.getPrice()));
+						blockchain.add(newblock);
+						TransactionID++;
+						blockID++;
+					}
+
+				
 			outStream.writeObject("Vinho colocado a venda com sucesso");	
 			}
 		}
