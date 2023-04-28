@@ -13,13 +13,17 @@
 
 import java.io.IOException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -28,12 +32,19 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Random;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.*;
 import javax.print.attribute.standard.NumberOfInterveningJobs;
@@ -59,8 +70,10 @@ public class TintolmarketServer {
 	private String passwordKeyStore;
 	private int TransactionID=1;
 	private int blockID=1;
-	private Key key;
+	private String certificado;
+	private SecretKey secret;
 	private Key privateKey;
+
 
 	/**
 	 * @param port
@@ -68,30 +81,26 @@ public class TintolmarketServer {
 	 */
 
 	@SuppressWarnings({"unchecked"})
-	public TintolmarketServer(int port) throws Exception {
+	public TintolmarketServer(int port, String pass) throws Exception {
 		this.port = port;
 		userList = new ArrayList<User>();
 		winesList = new ArrayList<Wines>();
 		winesForSaleList = new ArrayList<Wines>();
 		blockchain= new ArrayList<Block>();
-
+		passwordCifra = pass;
 		diretorio = new File("/images");
+
+
 				
 
 		br = new BufferedReader(new FileReader("users.txt"));
-		if(!(br.readLine() == null)){
-			userList = transformarEmUserUser((ArrayList<String>)readObjectFromFile(users));
-		}
+		Users();
 
 		br = new BufferedReader(new FileReader("wines.txt"));
-		if(!(br.readLine() == null)){
-			winesList = transformarEmWinesWines((ArrayList<String>)readObjectFromFile(wines));
-		}
+		wines();
 
 		br = new BufferedReader(new FileReader("winesforsale.txt"));
-		if(!(br.readLine() == null)){
-			winesForSaleList = transformarEmWinesWinesForSale((ArrayList<String>)readObjectFromFile(winesforsale));
-		}
+		winesforsale();
 
 	}
 
@@ -99,39 +108,52 @@ public class TintolmarketServer {
 		System.out.println("servidor: main");
 
 		if(args.length == 0){
-			TintolmarketServer server = new TintolmarketServer(12345);
+			TintolmarketServer server = new TintolmarketServer(12345, args[0]);
 			server.startServer(args);
 		}else{
-			TintolmarketServer server = new TintolmarketServer(Integer.parseInt(args[0]));
+			TintolmarketServer server = new TintolmarketServer(Integer.parseInt(args[0]), args[1]);
 			server.startServer(args);
 		}
+
+		
+		
+		
 	}
 
-	public void startServer(String[] args) {
+	public void startServer(String[] args) throws NoSuchAlgorithmException, InvalidKeySpecException {
 		//ServerSocket sSoc = null;
-		System.setProperty("javax.net.ssl.keyStore", args[2]);
-		System.setProperty("javax.net.ssl.keyStorePassword", args[3]);
-		SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-
-		SSLServerSocket sSoc = null;
 		
+		SSLServerSocket sSoc = null;
 		try {
 			if (args.length == 3) {
+				
 
-				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(12345);
+				String salt = "12345678";
+				SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+				KeySpec spec = new PBEKeySpec(passwordCifra.toCharArray(), salt.getBytes(), 65536, 256);
+				secret = new SecretKeySpec(factory.generateSecret(spec)
+					.getEncoded(), "AES");
 
-				passwordCifra = args[0];
+
+
 				keyStore = args[1];
 				passwordKeyStore = args[2];
 
+				System.setProperty("javax.net.ssl.keyStore", keyStore);
+				System.setProperty("javax.net.ssl.keyStorePassword", passwordKeyStore);
+		
+				SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(12345);
 			} else {
-
-				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(Integer.parseInt(args[0]));
-
 				passwordCifra = args[1];
 				keyStore = args[2];
 				passwordKeyStore = args[3];
-				
+
+				System.setProperty("javax.net.ssl.keyStore", keyStore);
+				System.setProperty("javax.net.ssl.keyStorePassword", passwordKeyStore);
+		
+				SSLServerSocketFactory sslServerSocketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+				sSoc = (SSLServerSocket) sslServerSocketFactory.createServerSocket(Integer.parseInt(args[0]));
 			}
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
@@ -229,15 +251,18 @@ public class TintolmarketServer {
 				FileInputStream kfile = new FileInputStream(keyStore); //keystore
 				kstore.load(kfile, passwordKeyStore.toCharArray());
 				privateKey = kstore.getKey("server", passwordKeyStore.toCharArray());
-				
+				FileOutputStream fos = new FileOutputStream("userLog.txt");
+				FileInputStream fis = new FileInputStream("EncryptedUserLog.cif");
+
 				FileReader fr = new FileReader("EncryptedUserLog.cif");
 				BufferedReader br2 = new BufferedReader(fr);
-				String s2;
-				if((s2 = br2.readLine()) != null){
+
+				if((br2.readLine()) != null){
 					Crypt.DecryptFile(privateKey);
 				}
-				
-				
+				br2.close();
+				fis.close();
+				fos.close();
 				BufferedReader br = new BufferedReader(new FileReader(new File("userLog.txt")));
 				boolean userExists = false;
 
@@ -245,6 +270,7 @@ public class TintolmarketServer {
 				for (String x = br.readLine(); x != null; x = br.readLine()) {
 					String[] split = x.split(":");
 					if (split[0].equals(user)) {
+						certificado = split[1];
 						userExists = true;
 						break;
 					}
@@ -260,8 +286,13 @@ public class TintolmarketServer {
 
 					Long received_nonse = (Long) inStream.readObject();
 					byte[] encrypted = (byte[]) inStream.readObject();
-					PublicKey key = (PublicKey) inStream.readObject();
-					Long desencrypted = Long.parseLong(Crypt.Decrypt(key, encrypted));
+					String keycert = (String) inStream.readObject();
+					FileInputStream fis3 = new FileInputStream(keycert);
+					CertificateFactory cf = CertificateFactory.getInstance("X509");
+					Certificate cert = cf.generateCertificate(fis3);	
+					PublicKey pk = cert.getPublicKey();
+
+					Long desencrypted = Long.parseLong(Crypt.Decrypt(pk, encrypted));
 
 					if(received_nonse != nonse || desencrypted != nonse){
 						outStream.writeObject("fechar");
@@ -269,7 +300,7 @@ public class TintolmarketServer {
 						outStream.writeObject("nao fechar");
 					}
 
-					currentUser = new User(user, 200, key);
+					currentUser = new User(user, 200, keycert);
 					userList.add(currentUser);
 
 					writeObjectToFile(users, transformarUser(userList));
@@ -280,14 +311,20 @@ public class TintolmarketServer {
 
 				} else{
 					outStream.writeObject("202 ACCEPTED");
-					byte[] encrypted = (byte[]) inStream.readObject();
+					String encrypted = (String) inStream.readObject();
 					for (User u : userList) {
 						if (u.getUsername().equals(user)) {
 							currentUser = u;
 							break;
 						}
 					}
-					Long desencrypted = Long.parseLong(Crypt.Decrypt(currentUser.getPk(), encrypted));
+
+					FileInputStream fis3 = new FileInputStream(currentUser.getPk());
+					CertificateFactory cf = CertificateFactory.getInstance("X509");
+					Certificate cert = cf.generateCertificate(fis3);	
+					PublicKey pk = cert.getPublicKey();
+
+					Long desencrypted = Long.parseLong(Crypt.Decrypt(pk, encrypted.getBytes()));
 					if(desencrypted == nonse){
 						outStream.writeObject("nao fechar");
 						outStream.writeObject("autenticado");
@@ -296,11 +333,13 @@ public class TintolmarketServer {
 					}
 				}
 
-				
+				FileOutputStream fos2 = new FileOutputStream("EncryptedUserLog.txt");
+				FileInputStream fis2 = new FileInputStream("userLog.txt");
 				Certificate cert = (Certificate) kstore.getCertificate("server");
 				PublicKey pk = cert.getPublicKey( ); 
 				Crypt.EncryptFile(pk);
-				
+				fis2.close();
+				fos2.close();
 				outStream.writeObject(currentUser.getUsername());
 				outStream.writeObject(currentUser.getWallet());
 
@@ -309,7 +348,6 @@ public class TintolmarketServer {
 					String acao = (String) inStream.readObject();
 					if(acao.equals("quit")){
 						quit = true;
-						System.out.println("thread fechada");
 					}else{
 						avaluateRequest(acao, currentUser, outStream, inStream);
 					}
@@ -338,7 +376,7 @@ public class TintolmarketServer {
 
 		} else if (split[0].equals("sell")) {
 
-			sellWine(split2[1], Double.parseDouble(split2[2]), Integer.parseInt(split2[3]), currentUser, outStream);
+			sellWine(split2[1], Double.parseDouble(split2[2]), Integer.parseInt(split2[3]), currentUser, outStream, inStream);
 
 		} else if (split[0].equals("view")) {
 
@@ -347,14 +385,13 @@ public class TintolmarketServer {
 
 		} else if (split[0].equals("buy")) {
 
-			buyWine(split2[1], split2[2], Integer.parseInt(split2[3]), currentUser, outStream);
+			buyWine(split2[1], split2[2], Integer.parseInt(split2[3]), currentUser, outStream, inStream);
 
 		} else if (split[0].equals("classify")) {
 
 			classifyWine(split2[1], Integer.parseInt(split2[2]), currentUser, outStream);
 
 		} else if (split[0].contains("talk")) {
-			System.out.println("avaliaRequest");
 			String[] split3 = str.split("/");
 			talk(split3[1], split3[2], currentUser, outStream);
 
@@ -378,15 +415,13 @@ public class TintolmarketServer {
 			boolean b = false;
 			outStream.writeObject(b);
 
-			System.out.println("nome da imagem: "+image);
+
 			Wines newWine = new Wines(wine, "", 0, 0, image);
-			System.out.println(newWine.getimage());
-			
+			winesList.add(newWine);
 			
 			//outStream.writeObject("O vinho foi adicionado ao catalogo");
 
 			long fileSize = inStream.readLong();
-			System.out.println("aqui");
 			try {
 				FileOutputStream fos = new FileOutputStream("images/"+image);
 
@@ -394,7 +429,6 @@ public class TintolmarketServer {
 				int bytesread = 0;
 				long bytesRecived = 0;
 
-				System.out.println("file size: " + fileSize);
 				while (bytesRecived < fileSize){
 					bytesread = inStream.read(buffer);
 					
@@ -404,16 +438,12 @@ public class TintolmarketServer {
 
 					fos.write(buffer, 0, bytesread);
 					bytesRecived += bytesread;
-					System.out.println(bytesRecived);
 				}
-
-				
 
 				fos.flush();
 				fos.close();
-				winesList.add(newWine);
 				writeObjectToFile(wines, transformarWines(winesList));
-				
+
 				outStream.writeObject("imagem adicionda com sucesso");
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -427,39 +457,35 @@ public class TintolmarketServer {
 		}
 	}
 
-	private void buyWine(String wineID, String sellerID, int quantity, User currentUser, ObjectOutputStream outStream)
-			throws Exception {
-		Wines wine = getWineForSale(wineID);
-		if ((wine == null)) {
-			// throw new Exception ("Ocorreu um erro, vinho não está registado para venda");
-			outStream.writeObject("Ocorreu um erro, vinho nao esta registado para venda");
+	private void buyWine(String wineID, String sellerID, int quantity, User currentUser, ObjectOutputStream outStream, ObjectInputStream inStream)
+		throws Exception {
+			Signature s = (Signature) inStream.readObject();
+			Wines wine = getWineForSale(wineID);
+			if ((wine == null)) {
+				// throw new Exception ("Ocorreu um erro, vinho não está registado para venda");
+				outStream.writeObject("Ocorreu um erro, vinho nao esta registado para venda");
 
-		} else if (!(wine.getUsername().equals(sellerID))) {
-			// throw new Exception ("vendedor não vende este vinho");
-			outStream.writeObject("vendedor nao vende este vinho");
+			} else if (!(wine.getUsername().equals(sellerID))) {
+				// throw new Exception ("vendedor não vende este vinho");
+				outStream.writeObject("vendedor nao vende este vinho");
 
-		} else if (quantity > wine.getQuantity()) {
-			// throw new Exception ("Quantidade demasiado elevada para o Stock existente");
-			outStream.writeObject("Quantidade demasiado elevada para o Stock existente");
+			} else if (quantity > wine.getQuantity()) {
+				// throw new Exception ("Quantidade demasiado elevada para o Stock existente");
+				outStream.writeObject("Quantidade demasiado elevada para o Stock existente");
 
-		} else if ((wine.getPrice() * wine.getQuantity()) > currentUser.getWallet()) {
-			// throw new Exception ("Não tem dinheiro suficiente");
-			outStream.writeObject("Nao tem dinheiro suficiente");
+			} else if ((wine.getPrice() * wine.getQuantity()) > currentUser.getWallet()) {
+				// throw new Exception ("Não tem dinheiro suficiente");
+				outStream.writeObject("Nao tem dinheiro suficiente");
 
-		} else {
-			wine.sell(quantity);
-
-			if(wine.getQuantity() == 0){
-				winesForSaleList.remove(wine);
-			}
-
-			writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
-			for (User i : userList) {
-				if (i.getUsername().equals(sellerID)) {
-					i.Soldsomething(wine.getPrice());
-					break;
+			} else {
+				wine.sell(quantity);
+				writeObjectToFile(winesforsale, transformarWinesForSale(winesForSaleList));
+				for (User i : userList) {
+					if (i.getUsername().equals(sellerID)) {
+						i.Soldsomething(wine.getPrice());
+						break;
+					}
 				}
-			}
 			
 
 			for (User i : userList) {
@@ -530,6 +556,7 @@ public class TintolmarketServer {
 
 	private void sellWine(String name, double value, int quantity, User currentUser, ObjectOutputStream outStream)
 			throws Exception {
+		Signature s = (Signature) inStream.readObject();
 		if (getWine(name) == null) {
 			outStream.writeObject("O vinho que pretende vender nao se encontra no catalogo");
 		} else {
@@ -565,7 +592,7 @@ public class TintolmarketServer {
 	}
 
 	private void talk(String user, String message, User currentUser, ObjectOutputStream outStream) throws Exception {
-		System.out.println("aqui");
+
 
 		if(getUser(user) == null){
 			outStream.writeObject("Usuario nao existente");
@@ -597,7 +624,6 @@ public class TintolmarketServer {
 		Wines wine2 = getWineForSale(wineID);
 
 		String image = wine.getimage();
-		System.out.println("nome da imagem no view:"+image);
 
 		outStream.writeObject(image);
 		
@@ -607,9 +633,8 @@ public class TintolmarketServer {
 		if(ifile.exists()){
 			System.out.println("ficheiro existe");
 		}
-        FileInputStream fis = new FileInputStream ("images/"+image);
+        FileInputStream fis = new FileInputStream (ifile);
 
-		System.out.println(ifile.length());
 		outStream.writeLong(ifile.length());
 		long fileLength = ifile.length();
 		long acc = 0;
@@ -622,7 +647,6 @@ public class TintolmarketServer {
 				System.out.println("Erro ao enviar a imagem");
 				break;
 			}
-			System.out.println(i);
 			outStream.write(buffer, 0, i);
 			acc += i;}
 		
@@ -633,7 +657,7 @@ public class TintolmarketServer {
 								  "Imagem : "+wine.getimage());
 		}else{
 			outStream.writeObject("Vinho : "+wine2.getWinename()+ " vendido por: "+wine2.getUsername()+ " preco: "+wine2.getPrice()
-		                         +" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine.getClassify());
+		                         +" quantidade: "+wine2.getQuantity()+" com classificacao: "+wine2.getClassify());
 		}
 		
 	    
@@ -650,25 +674,19 @@ public class TintolmarketServer {
 	private ArrayList<String> transformarUser(ArrayList<User> users){
 		ArrayList<String> ars = new ArrayList<>();
 		for (User u : users) {
-			ars.add(u.getUsername() + " " + u.getWallet() + " " + u.getPk().getEncoded().toString());
+			ars.add(u.getUsername() + " " + u.getWallet() + " " + u.getPk());
 		}
 		return ars;
 	}
 
-	private ArrayList<User> transformarEmUserUser(ArrayList<String> data) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException, IOException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, ClassNotFoundException{
+	private ArrayList<User> transformarEmUserUser(ArrayList<String> data) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException, FileNotFoundException, CertificateException{
 		ArrayList<User> users = new ArrayList<>();
 		for (String s : data) {
 			String[] split = s.split(" ");
 
-			for (String x = br.readLine(); x != null; x = br.readLine()) {
-				String[] split2 = x.split(":");
-				if (split2[0].equals(split[0])) {
-					
-					Key key = new SecretKeySpec(split[2].getBytes(),0,split[2].getBytes().length, "RSA");
-					users.add(new User(split[0], Integer.parseInt(split[1]), (PublicKey) key));
-					break;
-				}
-			}
+			users.add(new User(split[0], Integer.parseInt(split[1]),split[2]));
+			break;
+			
 		}
 		return users; 
 	}
@@ -687,7 +705,6 @@ public class TintolmarketServer {
 		for (String s : data) {
 			String[] split = s.split(" ");
 			wines.add(new Wines(split[0],null,0,0, split[1]));
-			System.out.println(split[1]);
 		}
 		return wines;
 	}
@@ -723,4 +740,198 @@ public class TintolmarketServer {
 		bw.close();
 
 	}
+
+	private synchronized void Users() throws InvalidAlgorithmParameterException {
+        try {
+            File file = new File("users.txt");
+            if(file.createNewFile()){
+                return;
+            }
+
+            if(file.length() != 0){
+
+                FileInputStream In = new FileInputStream("parametros.txt");
+                ObjectInputStream in = new ObjectInputStream(In);
+                byte[] params = ( byte[]) in.readObject();
+                in.close();
+                In.close();
+                AlgorithmParameters p = AlgorithmParameters.getInstance("PBEWithHmacSHA256AndAES_128");
+                p.init(params);
+                Cipher c = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
+
+                PBEKeySpec keySpec = new PBEKeySpec(passwordCifra.toCharArray(), passwordCifra.getBytes(), 20); // pass, salt, iterations
+                SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
+                SecretKey key = kf.generateSecret(keySpec);
+
+                c.init(Cipher.DECRYPT_MODE, key, p);
+                FileInputStream fis = new FileInputStream("users.txt");
+                CipherInputStream cis = new CipherInputStream(fis, c);
+
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] b2 = new byte[1024];
+                int f = 0;
+                while ((f = cis.read(b2)) != -1) {
+                    bos.write(b2, 0, f);
+                }
+                bos.close();
+                cis.close();
+                fis.close();
+
+                String decryptedData = new String(bos.toByteArray(), StandardCharsets.UTF_8);
+
+                for (String s : decryptedData.split("\n")) {
+                    String[] split = s.split(" ");
+					winesList.add(new Wines(split[0],split[1],Double.parseDouble(split[2]),Integer.parseInt(split[3]), null));
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.err.println("The following file was not found: " + "users.txt");
+            System.exit(0);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+	private synchronized void wines() {
+        try {
+            File file = new File("wines.txt");
+            if(file.createNewFile()){
+                return;
+            }
+
+            if(file.length() != 0){
+
+                FileInputStream In = new FileInputStream("parametros.txt");
+                ObjectInputStream in = new ObjectInputStream(In);
+                byte[] params = ( byte[]) in.readObject();
+                in.close();
+                In.close();
+                AlgorithmParameters p = AlgorithmParameters.getInstance("PBEWithHmacSHA256AndAES_128");
+                p.init(params);
+                Cipher c = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
+
+                PBEKeySpec keySpec = new PBEKeySpec(passwordCifra.toCharArray(), passwordCifra.getBytes(), 20); // pass, salt, iterations
+                SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
+                SecretKey key = kf.generateSecret(keySpec);
+
+                c.init(Cipher.DECRYPT_MODE, key, p);
+                FileInputStream fis = new FileInputStream("wines.txt");
+                CipherInputStream cis = new CipherInputStream(fis, c);
+
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] b2 = new byte[1024];
+                int f = 0;
+                while ((f = cis.read(b2)) != -1) {
+                    bos.write(b2, 0, f);
+                }
+                bos.close();
+                cis.close();
+                fis.close();
+
+                String decryptedData = new String(bos.toByteArray(), StandardCharsets.UTF_8);
+
+                for (String line : decryptedData.split("\n")) {
+                    String[] split = line.split(" ", 2);
+                    if (split.length == 3) {
+                        // create a new client object with the decrypted data
+                        User user = new User(split[0], Integer.parseInt(split[1]), split[2]);
+                        userList.add(user);
+                    }
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.err.println("The following file was not found: " + "wines.txt");
+            System.exit(0);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+	private synchronized void winesforsale() {
+        try {
+            File file = new File("winesforsale.txt");
+            if(file.createNewFile()){
+                return;
+            }
+
+            if(file.length() != 0){
+
+                FileInputStream In = new FileInputStream("parametros.txt");
+                ObjectInputStream in = new ObjectInputStream(In);
+                byte[] params = ( byte[]) in.readObject();
+                in.close();
+                In.close();
+                AlgorithmParameters p = AlgorithmParameters.getInstance("PBEWithHmacSHA256AndAES_128");
+                p.init(params);
+                Cipher c = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
+
+                PBEKeySpec keySpec = new PBEKeySpec(passwordCifra.toCharArray(), passwordCifra.getBytes(), 20); // pass, salt, iterations
+                SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
+                SecretKey key = kf.generateSecret(keySpec);
+
+                c.init(Cipher.DECRYPT_MODE, key, p);
+                FileInputStream fis = new FileInputStream("winesforsale.txt");
+                CipherInputStream cis = new CipherInputStream(fis, c);
+
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] b2 = new byte[1024];
+                int f = 0;
+                while ((f = cis.read(b2)) != -1) {
+                    bos.write(b2, 0, f);
+                }
+                bos.close();
+                cis.close();
+                fis.close();
+
+                String decryptedData = new String(bos.toByteArray(), StandardCharsets.UTF_8);
+
+                for (String s : decryptedData.split("\n")) {
+                    String[] split = s.split(" ");
+					winesForSaleList.add(new Wines(split[0],split[1],Double.parseDouble(split[2]),Integer.parseInt(split[3]), null));
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.err.println("The following file was not found: " + "winesforsale.txt");
+            System.exit(0);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
 }

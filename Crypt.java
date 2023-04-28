@@ -44,7 +44,7 @@ public class Crypt {
         fosD = new FileOutputStream("decif.txt");
 
         // SecretKeySpec keySpec2 = new SecretKeySpec(key.getEncoded(), "RSA");
-		c= Cipher.getInstance("RSA");
+		c= Cipher.getInstance("AES");
         c.init(Cipher.DECRYPT_MODE, key);
 
         cos2 = new CipherInputStream(fisD, c);
@@ -86,7 +86,7 @@ public class Crypt {
 	
 	public static void EncryptFile(Key key)throws InvalidKeyException, IOException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 
-        Cipher c = Cipher.getInstance("RSA");
+        Cipher c = Cipher.getInstance("AES");
         c.init(Cipher.ENCRYPT_MODE, key);
 
         FileInputStream fis;
