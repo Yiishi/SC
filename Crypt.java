@@ -41,10 +41,12 @@ public class Crypt {
         CipherInputStream cos2;
 
         fisD = new FileInputStream("EncryptedUserLog.cif");
-        fosD = new FileOutputStream("decif.txt");
+		File del = new File("userLog.txt");
+		if()
+        fosD = new FileOutputStream("userLog.txt");
 
         // SecretKeySpec keySpec2 = new SecretKeySpec(key.getEncoded(), "RSA");
-		c= Cipher.getInstance("AES");
+		c= Cipher.getInstance("RSA");
         c.init(Cipher.DECRYPT_MODE, key);
 
         cos2 = new CipherInputStream(fisD, c);
@@ -86,7 +88,7 @@ public class Crypt {
 	
 	public static void EncryptFile(Key key)throws InvalidKeyException, IOException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
 
-        Cipher c = Cipher.getInstance("AES");
+        Cipher c = Cipher.getInstance("RSA");
         c.init(Cipher.ENCRYPT_MODE, key);
 
         FileInputStream fis;
@@ -104,34 +106,12 @@ public class Crypt {
             cos.write(b, 0, i);
             i = fis.read(b);
         }
-
+		File del = new File("userLog.txt");
+		del.delete();
         cos.close();
         fis.close();
         fos.close();
 
-		// FileReader fr = new FileReader("userLog.txt");
-		// BufferedReader br = new BufferedReader(fr);
-
-		// FileWriter fw = new FileWriter("EncryptedUserLog.cif");
-		// BufferedWriter bw = new BufferedWriter(fw);
-
-		// String s;
-		// StringBuilder sb = new StringBuilder();
-
-        // while ((s = br.readLine()) != null) {
-        //  	sb.append(s);
-		// 	bw.write(Encrypt(key, sb).toString());
-		// 	sb.delete(0, sb.length());
-        // }
-
-		
-		// bw.flush();
-		// fw.flush();
-		
-		// fr.close();
-		// br.close();
-		// fw.close();
-		// bw.close();
 	}
 
 }

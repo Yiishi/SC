@@ -94,13 +94,19 @@ public class TintolmarketServer {
 				
 
 		br = new BufferedReader(new FileReader("users.txt"));
-		Users();
+        if(!(br.readLine() == null)){
+            userList = transformarEmUserUser((ArrayList<String>)readObjectFromFile(users));
+        }
 
-		br = new BufferedReader(new FileReader("wines.txt"));
-		wines();
+        br = new BufferedReader(new FileReader("wines.txt"));
+        if(!(br.readLine() == null)){
+            winesList = transformarEmWinesWines((ArrayList<String>)readObjectFromFile(wines));
+        }
 
-		br = new BufferedReader(new FileReader("winesforsale.txt"));
-		winesforsale();
+        br = new BufferedReader(new FileReader("winesforsale.txt"));
+        if(!(br.readLine() == null)){
+            winesForSaleList = transformarEmWinesWinesForSale((ArrayList<String>)readObjectFromFile(winesforsale));
+        }
 
 	}
 
@@ -131,8 +137,7 @@ public class TintolmarketServer {
 				String salt = "12345678";
 				SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
 				KeySpec spec = new PBEKeySpec(passwordCifra.toCharArray(), salt.getBytes(), 65536, 256);
-				secret = new SecretKeySpec(factory.generateSecret(spec)
-					.getEncoded(), "AES");
+				secret = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
 
 
 
@@ -736,197 +741,4 @@ public class TintolmarketServer {
 
 	}
 
-	private synchronized void Users() throws InvalidAlgorithmParameterException {
-        try {
-            File file = new File("users.txt");
-            if(file.createNewFile()){
-                return;
-            }
-
-            if(file.length() != 0){
-
-                FileInputStream In = new FileInputStream("parametros.txt");
-                ObjectInputStream in = new ObjectInputStream(In);
-                byte[] params = ( byte[]) in.readObject();
-                in.close();
-                In.close();
-                AlgorithmParameters p = AlgorithmParameters.getInstance("PBEWithHmacSHA256AndAES_128");
-                p.init(params);
-                Cipher c = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
-
-                PBEKeySpec keySpec = new PBEKeySpec(passwordCifra.toCharArray(), passwordCifra.getBytes(), 20); // pass, salt, iterations
-                SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
-                SecretKey key = kf.generateSecret(keySpec);
-
-                c.init(Cipher.DECRYPT_MODE, key, p);
-                FileInputStream fis = new FileInputStream("users.txt");
-                CipherInputStream cis = new CipherInputStream(fis, c);
-
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                byte[] b2 = new byte[1024];
-                int f = 0;
-                while ((f = cis.read(b2)) != -1) {
-                    bos.write(b2, 0, f);
-                }
-                bos.close();
-                cis.close();
-                fis.close();
-
-                String decryptedData = new String(bos.toByteArray(), StandardCharsets.UTF_8);
-
-                for (String s : decryptedData.split("\n")) {
-                    String[] split = s.split(" ");
-					winesList.add(new Wines(split[0],split[1],Double.parseDouble(split[2]),Integer.parseInt(split[3]), null));
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.err.println("The following file was not found: " + "users.txt");
-            System.exit(0);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeySpecException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-	private synchronized void wines() {
-        try {
-            File file = new File("wines.txt");
-            if(file.createNewFile()){
-                return;
-            }
-
-            if(file.length() != 0){
-
-                FileInputStream In = new FileInputStream("parametros.txt");
-                ObjectInputStream in = new ObjectInputStream(In);
-                byte[] params = ( byte[]) in.readObject();
-                in.close();
-                In.close();
-                AlgorithmParameters p = AlgorithmParameters.getInstance("PBEWithHmacSHA256AndAES_128");
-                p.init(params);
-                Cipher c = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
-
-                PBEKeySpec keySpec = new PBEKeySpec(passwordCifra.toCharArray(), passwordCifra.getBytes(), 20); // pass, salt, iterations
-                SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
-                SecretKey key = kf.generateSecret(keySpec);
-
-                c.init(Cipher.DECRYPT_MODE, key, p);
-                FileInputStream fis = new FileInputStream("wines.txt");
-                CipherInputStream cis = new CipherInputStream(fis, c);
-
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                byte[] b2 = new byte[1024];
-                int f = 0;
-                while ((f = cis.read(b2)) != -1) {
-                    bos.write(b2, 0, f);
-                }
-                bos.close();
-                cis.close();
-                fis.close();
-
-                String decryptedData = new String(bos.toByteArray(), StandardCharsets.UTF_8);
-
-                for (String line : decryptedData.split("\n")) {
-                    String[] split = line.split(" ", 2);
-                    if (split.length == 3) {
-                        // create a new client object with the decrypted data
-                        User user = new User(split[0], Integer.parseInt(split[1]), split[2]);
-                        userList.add(user);
-                    }
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.err.println("The following file was not found: " + "wines.txt");
-            System.exit(0);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeySpecException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-	private synchronized void winesforsale() {
-        try {
-            File file = new File("winesforsale.txt");
-            if(file.createNewFile()){
-                return;
-            }
-
-            if(file.length() != 0){
-
-                FileInputStream In = new FileInputStream("parametros.txt");
-                ObjectInputStream in = new ObjectInputStream(In);
-                byte[] params = ( byte[]) in.readObject();
-                in.close();
-                In.close();
-                AlgorithmParameters p = AlgorithmParameters.getInstance("PBEWithHmacSHA256AndAES_128");
-                p.init(params);
-                Cipher c = Cipher.getInstance("PBEWithHmacSHA256AndAES_128");
-
-                PBEKeySpec keySpec = new PBEKeySpec(passwordCifra.toCharArray(), passwordCifra.getBytes(), 20); // pass, salt, iterations
-                SecretKeyFactory kf = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_128");
-                SecretKey key = kf.generateSecret(keySpec);
-
-                c.init(Cipher.DECRYPT_MODE, key, p);
-                FileInputStream fis = new FileInputStream("winesforsale.txt");
-                CipherInputStream cis = new CipherInputStream(fis, c);
-
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                byte[] b2 = new byte[1024];
-                int f = 0;
-                while ((f = cis.read(b2)) != -1) {
-                    bos.write(b2, 0, f);
-                }
-                bos.close();
-                cis.close();
-                fis.close();
-
-                String decryptedData = new String(bos.toByteArray(), StandardCharsets.UTF_8);
-
-                for (String s : decryptedData.split("\n")) {
-                    String[] split = s.split(" ");
-					winesForSaleList.add(new Wines(split[0],split[1],Double.parseDouble(split[2]),Integer.parseInt(split[3]), null));
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.err.println("The following file was not found: " + "winesforsale.txt");
-            System.exit(0);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeySpecException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
 }
