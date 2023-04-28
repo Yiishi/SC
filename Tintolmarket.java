@@ -283,11 +283,23 @@ public class Tintolmarket {
     }
 
     public static void sell(String wine, double value, int quantity) throws Exception {
-        outToServer.writeObject("sell " + wine + " " + value + " " + quantity);
+        String data = "sell " + wine + " " + value + " " + quantity;
+        Signature s = Signature.getInstance("MD5withRSA");
+        s.initSign((PrivateKey) privateKey);
+        byte buf[] = data.getBytes( );
+        s.update(buf);
+        outToServer.writeObject(data);
+        outToServer.writeObject(s.sign( ));
     }
 
     public static void buy(String wine, String seller, int quantity) throws Exception {
-        outToServer.writeObject("buy " + wine + " " + seller + " " + quantity);
+        String data = "buy " + wine + " " + seller + " " + quantity;
+        Signature s = Signature.getInstance("MD5withRSA");
+        s.initSign((PrivateKey) privateKey);
+        byte buf[] = data.getBytes( );
+        s.update(buf);
+        outToServer.writeObject(data);
+        outToServer.writeObject(s.sign( ));
     }
 
     public static void view(String wine) throws Exception {
